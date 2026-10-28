@@ -11,7 +11,8 @@ export const Editor = () => {
       wsRef.current = null
       setActive(false)
     } else {
-      wsRef.current = new WebSocket(`ws://${location.host}/websocket`)
+      const isHttps = location.protocol.startsWith('https')
+      wsRef.current = new WebSocket(`${isHttps ? 'wss' : 'ws'}://${location.host}/websocket`)
       wsRef.current.addEventListener('message', (event) => {
         setMessages(prev => [
           ...prev,
