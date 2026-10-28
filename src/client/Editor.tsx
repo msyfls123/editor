@@ -1,4 +1,5 @@
 import { useRef, useEffect, useState, useCallback } from 'react'
+import  { Button } from '@/components/ui/button'
 export const Editor = () => {
 
   const [active, setActive] = useState(false)
@@ -37,8 +38,8 @@ export const Editor = () => {
       THis is editor.
       Ahahaha!
 
-      <button onClick={toggleActive}>{active ? 'Disable' : 'Enable'}</button>
-      <button onClick={send} disabled={!active}>Send!</button>
+      <Button onClick={toggleActive}>{active ? 'Disable' : 'Enable'}</Button>
+      <Button onClick={send} disabled={!active}>Send!</Button>
 
       <ul>
         {messages.map(m => (
