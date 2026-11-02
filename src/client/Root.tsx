@@ -1,6 +1,8 @@
 import { useRef, useEffect, useState, useCallback } from 'react'
-import  { Button } from '@/components/ui/button'
-export const Editor = () => {
+import { Button } from '@/components/ui/button'
+import { Editor } from './editor'
+
+export const Root = () => {
 
   const [active, setActive] = useState(false)
   const wsRef = useRef<WebSocket>(null)
@@ -34,7 +36,7 @@ export const Editor = () => {
   }, [])
 
   return (
-    <div>
+    <div className='p-2'>
       THis is editor.
       Ahahaha!
 
@@ -48,6 +50,7 @@ export const Editor = () => {
           </li>
         ))}
       </ul>
+      <Editor />
     </div>
   )
 }

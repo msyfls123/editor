@@ -1,7 +1,7 @@
 import { createRoot } from 'react-dom/client'
-import { Editor } from './Editor'
+import { Root } from './Root'
 
 const rootEl = document.getElementById('app')
 if (rootEl) {
-  createRoot(rootEl).render(<Editor />)
+  createRoot(rootEl).render(<Root />)
 }
