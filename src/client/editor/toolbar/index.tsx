@@ -6,8 +6,19 @@ import { UnderlineButton } from "./UnderlineButton"
 import { AlignLeftButton } from "./AlignLeftButton"
 import { AlignRightButton } from "./AlignRightButton"
 import { AlignCenterButton } from './AligCenterButton'
+import { Button } from "@/components/ui/button"
+import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext"
+import { Save } from "lucide-react"
+import { toast } from "@/components/ui/toast"
+import { ImageButton } from "./Image"
 
-export const Toolbar = () => {
+interface ToolbarProps {
+onSave: (text: string) => void
+}
+
+export const Toolbar = ({ onSave }: ToolbarProps) => {
+  const [editor] = useLexicalComposerContext()
+
   return (
     <div className="flex space-x-5" >
       <ButtonGroup>
@@ -20,6 +31,25 @@ export const Toolbar = () => {
         <AlignLeftButton />
         <AlignCenterButton />
         <AlignRightButton />
+      </ButtonGroup>
+
+      <ButtonGroup>
+        <ImageButton />
+      </ButtonGroup>
+
+      <ButtonGroup>
+        <Button
+          variant="outline"
+          onClick={() => {
+            onSave(JSON.stringify(editor.getEditorState()))
+            toast.add({
+              type: 'success',
+              description: 'Saved.'
+            })
+          }}
+        >
+          <Save />
+        </Button>
       </ButtonGroup>
     </div>
   )

@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Editor } from './editor'
+import { Toaster } from './components/ui/toast'
 
 export const Root = () => {
 
@@ -36,12 +37,17 @@ export const Root = () => {
   }, [])
 
   return (
+    <Toaster>
     <div className='p-2'>
-      THis is editor.
-      Ahahaha!
-
-      <Button onClick={toggleActive}>{active ? 'Disable' : 'Enable'}</Button>
-      <Button onClick={send} disabled={!active}>Send!</Button>
+      <p>
+      This is editor.
+      WIP now.
+      </p>
+        <p>
+          Demo WebSocket &nbsp;
+          <Button onClick={toggleActive}>{active ? 'Disable' : 'Enable'}</Button>
+          <Button onClick={send} disabled={!active}>Send!</Button>
+        </p>
 
       <ul>
         {messages.map(m => (
@@ -51,6 +57,7 @@ export const Root = () => {
         ))}
       </ul>
       <Editor />
-    </div>
+      </div>
+    </Toaster>
   )
 }
