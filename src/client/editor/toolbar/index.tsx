@@ -20,7 +20,7 @@ export const Toolbar = ({ onSave }: ToolbarProps) => {
   const [editor] = useLexicalComposerContext()
 
   return (
-    <div className="flex space-x-5" >
+    <div className="w-full flex flex-wrap gap-3" >
       <ButtonGroup>
         <BoldButton />
         <ItalicButton />

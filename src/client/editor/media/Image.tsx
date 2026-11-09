@@ -50,17 +50,26 @@ const memorizedValue = useMemo(() => ({
 
 return <ImageContext value={memorizedValue}>
 {current && <Drawer open onOpenChange={handleOpenChange} disablePointerDismissal showSwipeHandle swipeDirection={isMobile ? 'down' : 'right'}>
-    <DrawerContent className={cn(!isMobile && "w-[70vw]")}>
+    <DrawerContent className={cn(!isMobile && "w-[70vw] text-")}>
     <DrawerHeader>
       <DrawerTitle>Edit Image</DrawerTitle>
       <DrawerDescription>You can edit image before uploading.</DrawerDescription>
       <div>
         <ImageEditor
+            minHeight={400}
+            style={Object.assign(isMobile ? {
+              maxHeight: '450px'
+            } : {}, {
+              padding: '10px',
+              border: '1px solid var(--color-slate-300)',
+              borderRadius: '8px'
+            })}
             image={current.dataUrl}
             onSave={({ blob, dataUrl }) => {
               console.log(blob, dataUrl, blob.size, dataUrl.length)
               // setCurrent(prev => ({ ...prev as ImageItem, modified: blob, dataUrl }))
             }}
+            onCancel={() => setCurrent(null)}
         />
         </div>
         <DrawerFooter>
