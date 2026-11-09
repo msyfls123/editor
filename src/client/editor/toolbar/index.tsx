@@ -11,6 +11,7 @@ import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext
 import { Save } from "lucide-react"
 import { toast } from "@/components/ui/toast"
 import { ImageButton } from "./Image"
+import { Image2Button } from "./Image2"
 
 interface ToolbarProps {
 onSave: (text: string) => void
@@ -35,6 +36,7 @@ export const Toolbar = ({ onSave }: ToolbarProps) => {
 
       <ButtonGroup>
         <ImageButton />
+        <Image2Button />
       </ButtonGroup>
 
       <ButtonGroup>

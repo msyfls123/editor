@@ -15,6 +15,8 @@ import { configExtension, defineExtension } from 'lexical';
 import { Toolbar } from './toolbar';
 import { classTheme } from './theme';
 import { useMemo } from 'react';
+import { ImageExtension } from './plugins/ImageExtension';
+import { ImageNodePlugin } from './plugins/ImageExtension/ImageNodePlugin';
 
 const placeholder = 'Enter some rich text...';
 
@@ -41,6 +43,7 @@ export function EditorInner({ initialEditorState, saveContent }: EditorProps) {
         disabled: isEmbedded,
       }),
       TreeViewExtension,
+      ImageExtension,
     ],
     name: '@lexical/examples/react-rich',
     namespace: 'react-rich',
@@ -61,6 +64,7 @@ export function EditorInner({ initialEditorState, saveContent }: EditorProps) {
             }
           />
           {/*<ExtensionComponent lexical:extension={TreeViewExtension} />*/}
+          <ImageNodePlugin />
         </div>
       </div>
     </LexicalExtensionComposer>
