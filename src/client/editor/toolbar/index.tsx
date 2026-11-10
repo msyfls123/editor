@@ -12,6 +12,7 @@ import { Save } from "lucide-react"
 import { toast } from "@/components/ui/toast"
 import { ImageButton } from "./Image"
 import { Image2Button } from "./Image2"
+import { ImportButton } from "./ImportButton"
 
 interface ToolbarProps {
 onSave: (text: string) => void
@@ -37,6 +38,7 @@ export const Toolbar = ({ onSave }: ToolbarProps) => {
       <ButtonGroup>
         <ImageButton />
         <Image2Button />
+        <ImportButton />
       </ButtonGroup>
 
       <ButtonGroup>

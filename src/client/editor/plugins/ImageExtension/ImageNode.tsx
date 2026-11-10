@@ -1,59 +1,105 @@
-import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import {
-  DecoratorNode,
   $create,
   type NodeKey,
-  type SerializedLexicalNode,
-  BaseSelection,
+  ElementFormatType,
+  createState,
+  stringValue,
+  DOMConversion,
 } from "lexical";
-import { ReactNode } from "react";
+import { DecoratorBlockNode, SerializedDecoratorBlockNode } from "@lexical/react/LexicalDecoratorBlockNode";
+import { BlockWithAlignableContents } from "@lexical/react/LexicalBlockWithAlignableContents";
 
-const ImageComp = () => {
-  return <img src="https://picsum.photos/192/192" width="50px" height="50px" />
+interface ImageCompProps {
+  nodeKey: NodeKey;
+  format: ElementFormatType | null;
 }
 
-export class ImageNode extends DecoratorNode<ReactNode> {
+type SerializedImageNode = SerializedDecoratorBlockNode & {
+  format: string
+}
+
+const ImageComp = ({ nodeKey, format }: ImageCompProps) => {
+  return (
+    <BlockWithAlignableContents
+      nodeKey={nodeKey}
+      className={{
+        base: "group/image-block",
+        focus: "image-focus",
+      }}
+      format={format}
+    >
+      <img className="inline-block border-2 border-transparent group-[.image-focus]/image-block:border-cyan-500" src="https://picsum.photos/192/192" width="50px" height="50px" />
+    </BlockWithAlignableContents>
+  );
+};
+
+const formatState = createState('format', {
+  parse: (value) => stringValue()
+})
+
+export class ImageNode extends DecoratorBlockNode {
   static getType(): string {
-    return 'image'
+    return "image";
   }
 
-  static clone(node: ImageNode): ImageNode {
-    return new ImageNode(node.__key)
+  $config() {
+    return this.config('image', {
+      extends: DecoratorBlockNode,
+      stateConfigs: [{ stateConfig: formatState }]
+    })
   }
 
-  static importJSON(_serializedNode: SerializedLexicalNode): ImageNode {
-    return $createImageNode()
+  // serialize
+
+  static importJSON(_serializedNode: SerializedImageNode): ImageNode {
+    const node = $createImageNode();
+    node.setFormat(_serializedNode.format)
+    return node
   }
 
-  isInline(): boolean {
-    return false
+  exportJSON(): SerializedImageNode {
+    return {
+      ...super.exportJSON(),
+      format: this.getFormat(),
+    }
   }
 
-  isKeyboardSelectable(): boolean {
-    return true
+  exportDOM() {
+    const element = document.createElement('div')
+    element.setAttribute('data-lexical-image-block', 'true')
+    if (this.getFormat()) {
+      element.style.textAlign = this.getFormat()
+    }
+    const img = document.createElement('img')
+    img.src = "https://picsum.photos/192/192"
+    img.classList.add('inline-block')
+    element.appendChild(img)
+    return {
+      element
+    }
+  }
+
+  // view
+
+  decorate() {
+    return <ImageComp nodeKey={this.getKey()} format={this.getFormat()} />;
   }
 
   createDOM(): HTMLElement {
-    const div = document.createElement('div')
-    div.contentEditable = 'false'
-    return div
+    const div = document.createElement("div");
+    div.contentEditable = "false";
+    return div;
   }
 
   updateDOM(): false {
-    return false
-  }
-
-  decorate(): ReactNode {
-    return <ImageComp />
+    return false;
   }
 }
 
 export function $createImageNode(): ImageNode {
-  return $create(ImageNode)
+  return $create(ImageNode);
 }
 
-export function $isImageNode(
-  node: unknown,
-): node is ImageNode {
+export function $isImageNode(node: unknown): node is ImageNode {
   return node instanceof ImageNode;
 }
