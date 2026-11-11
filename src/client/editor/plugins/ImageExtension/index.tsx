@@ -1,17 +1,23 @@
 import { CustomCommand } from "@/constants";
-import { $insertNodes, COMMAND_PRIORITY_EDITOR, createCommand, defineExtension } from "lexical";
+import { COMMAND_PRIORITY_EDITOR, configExtension, createCommand, defineExtension } from "lexical";
 import { $createImageNode, ImageNode } from "./ImageNode";
+import { DOMImportExtension } from "@lexical/html";
+import { ImageImportRule } from "./ImageTransversion";
+import { $insertNodeToNearestRoot } from "@lexical/utils";
 
 export const INSERT_IMAGE_COMMAND = createCommand(CustomCommand.INSERT_IMAGE_COMMAND)
 
 export const ImageExtension = defineExtension({
   name: 'editor/image',
   nodes: () => [ImageNode],
+  dependencies: [
+    configExtension(DOMImportExtension, { rules: [ImageImportRule ]})
+  ],
   register(editor) {
     return editor.registerCommand(
       INSERT_IMAGE_COMMAND,
       () => {
-        $insertNodes([$createImageNode()])
+        $insertNodeToNearestRoot($createImageNode())
         return true
       },
       COMMAND_PRIORITY_EDITOR

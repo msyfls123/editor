@@ -16,8 +16,6 @@ import { Toolbar } from './toolbar';
 import { classTheme } from './theme';
 import { useMemo } from 'react';
 import { ImageExtension } from './plugins/ImageExtension';
-import { DOMImportExtension } from '@lexical/html';
-import { ImageImportRule } from './plugins/ImageExtension/ImageTransversion';
 
 const placeholder = 'Enter some rich text...';
 
@@ -45,7 +43,6 @@ export function EditorInner({ initialEditorState, saveContent }: EditorProps) {
       }),
       TreeViewExtension,
       ImageExtension,
-      configExtension(DOMImportExtension, { rules: [ImageImportRule] })
     ],
     name: '@lexical/examples/react-rich',
     namespace: 'react-rich',
@@ -65,7 +62,7 @@ export function EditorInner({ initialEditorState, saveContent }: EditorProps) {
               <div className="text-slate-400 overflow-hidden absolute top-4 left-4 select-none inline-block pointer-events-none">{placeholder}</div>
             }
           />
-          {/*<ExtensionComponent lexical:extension={TreeViewExtension} />*/}
+          <ExtensionComponent lexical:extension={TreeViewExtension} />
         </div>
       </div>
     </LexicalExtensionComposer>

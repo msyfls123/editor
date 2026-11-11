@@ -27,6 +27,7 @@
     "@lexical/html": "0.53.0",
     "@lexical/react": "0.53.0",
     "@lexical/rich-text": "0.53.0",
+    "@lexical/utils": "0.53.0",
     "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^26.6.5",
     "@types/react": "^19.3.0",

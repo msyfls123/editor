@@ -1,6 +1,6 @@
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import { $insertNodes } from 'lexical';
-import { Import } from 'lucide-react';
+import { $insertNodeToNearestRoot } from '@lexical/utils';
+import { ImageDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCallback, useMemo } from 'react';
 import { getExtensionDependencyFromEditor } from '@lexical/extension';
@@ -19,15 +19,16 @@ export function ImportButton() {
         'text/html'
       )
       const nodes = dep.output.$generateNodesFromDOM(dom)
-      $insertNodes(nodes)
+      $insertNodeToNearestRoot(nodes[0])
     })
   }, [])
 
   return (
     <Button
       variant="outline"
+      title='Import Image HTML'
       onClick={exampleImport}>
-        <Import/>
+        <ImageDown/>
     </Button>
   );
 }

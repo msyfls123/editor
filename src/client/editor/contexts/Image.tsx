@@ -23,39 +23,39 @@ const ImageContext = createContext<ImageContext>({
 })
 
 export const ImageProvider = ({ children }: { children: ReactNode }) => {
-const isMobile = useIsMobile()
-const [current, setCurrent] = useState<ImageItem | null>(null)
+  const isMobile = useIsMobile()
+  const [current, setCurrent] = useState<ImageItem | null>(null)
 
-const selectImage = useCallback((file: File) => {
-  readAsDataUrl(file).then((dataUrl) => {
+  const selectImage = useCallback((file: File) => {
+    readAsDataUrl(file).then((dataUrl) => {
 
-    setCurrent({
-      origin: file,
-      dataUrl,
-      modified: null
+      setCurrent({
+        origin: file,
+        dataUrl,
+        modified: null
+      })
     })
-  })
 
-}, [])
+  }, [])
 
-const handleOpenChange = useCallback((flag: boolean) => {
-  if (flag) return
-  setCurrent(null)
-}, [])
+  const handleOpenChange = useCallback((flag: boolean) => {
+    if (flag) return
+    setCurrent(null)
+  }, [])
 
-const memorizedValue = useMemo(() => ({
-  current,
-  selectImage,
-}), [current, selectImage])
+  const memorizedValue = useMemo(() => ({
+    current,
+    selectImage,
+  }), [current, selectImage])
 
-return <ImageContext value={memorizedValue}>
-{current && <Drawer open onOpenChange={handleOpenChange} disablePointerDismissal showSwipeHandle swipeDirection={isMobile ? 'down' : 'right'}>
-    <DrawerContent className={cn(!isMobile && "w-[70vw] text-")}>
-    <DrawerHeader>
-      <DrawerTitle>Edit Image</DrawerTitle>
-      <DrawerDescription>You can edit image before uploading.</DrawerDescription>
-      <div>
-        <ImageEditor
+  return <ImageContext value={memorizedValue}>
+    {current && <Drawer open onOpenChange={handleOpenChange} disablePointerDismissal showSwipeHandle swipeDirection={isMobile ? 'down' : 'right'}>
+      <DrawerContent className={cn(!isMobile && "w-[70vw] text-")}>
+        <DrawerHeader>
+          <DrawerTitle>Edit Image</DrawerTitle>
+          <DrawerDescription>You can edit image before uploading.</DrawerDescription>
+          <div>
+            <ImageEditor
             minHeight={400}
             style={Object.assign(isMobile ? {
               maxHeight: '450px'
@@ -70,17 +70,17 @@ return <ImageContext value={memorizedValue}>
               // setCurrent(prev => ({ ...prev as ImageItem, modified: blob, dataUrl }))
             }}
             onCancel={() => setCurrent(null)}
-        />
-        </div>
-        <DrawerFooter>
-          <Button>Confirm</Button>
-          <DrawerClose render={<Button variant="outline">Cancel</Button>} />
-        </DrawerFooter>
-      </DrawerHeader>
-    </DrawerContent>
-  </Drawer>}
-  {children}
-</ImageContext>
+            />
+          </div>
+          <DrawerFooter>
+            <Button>Confirm</Button>
+            <DrawerClose render={<Button variant="outline">Cancel</Button>} />
+          </DrawerFooter>
+        </DrawerHeader>
+      </DrawerContent>
+    </Drawer>}
+    {children}
+  </ImageContext>
 }
 
 export const useImage = () => useContext(ImageContext)

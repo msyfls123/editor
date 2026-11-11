@@ -1,6 +1,6 @@
 import { useStateFromLocalStorage } from "./hooks/usePersistence";
 import { EditorInner } from './editor'
-import { ImageProvider } from "./media/Image";
+import { ImageProvider } from "./contexts/Image";
 
 export function Editor() {
   const { loaded, initialState, saveContent } = useStateFromLocalStorage()

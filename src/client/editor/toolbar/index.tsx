@@ -13,6 +13,8 @@ import { toast } from "@/components/ui/toast"
 import { ImageButton } from "./Image"
 import { Image2Button } from "./Image2"
 import { ImportButton } from "./ImportButton"
+import { useTextFormat } from "../hooks/useTextFormat"
+import { FormatStatus } from "@/constants/format"
 
 interface ToolbarProps {
 onSave: (text: string) => void
@@ -20,19 +22,20 @@ onSave: (text: string) => void
 
 export const Toolbar = ({ onSave }: ToolbarProps) => {
   const [editor] = useLexicalComposerContext()
+  const format = useTextFormat()
 
   return (
     <div className="w-full flex flex-wrap gap-3" >
       <ButtonGroup>
-        <BoldButton />
-        <ItalicButton />
-        <UnderlineButton />
-        <StrikethroughButton />
+        <BoldButton formatStatus={format.bold} />
+        <ItalicButton formatStatus={format.italic} />
+        <UnderlineButton formatStatus={format.underline} />
+        <StrikethroughButton formatStatus={format.strikethrough} />
       </ButtonGroup>
       <ButtonGroup>
-        <AlignLeftButton />
-        <AlignCenterButton />
-        <AlignRightButton />
+        <AlignLeftButton formatStatus={format.align === 'left' ? FormatStatus.ACTIVE : FormatStatus.INACTIVE}/>
+        <AlignCenterButton formatStatus={format.align === 'center' ? FormatStatus.ACTIVE : FormatStatus.INACTIVE} />
+        <AlignRightButton  formatStatus={format.align === 'right' ? FormatStatus.ACTIVE : FormatStatus.INACTIVE}/>
       </ButtonGroup>
 
       <ButtonGroup>

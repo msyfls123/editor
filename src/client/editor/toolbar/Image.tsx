@@ -1,6 +1,6 @@
 import { Image } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useImage } from "../media/Image";
+import { useImage } from "../contexts/Image";
 
 export function ImageButton() {
   const { selectImage } = useImage();

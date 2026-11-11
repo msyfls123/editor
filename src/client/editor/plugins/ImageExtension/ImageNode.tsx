@@ -4,10 +4,10 @@ import {
   ElementFormatType,
   createState,
   stringValue,
-  DOMConversion,
 } from "lexical";
 import { DecoratorBlockNode, SerializedDecoratorBlockNode } from "@lexical/react/LexicalDecoratorBlockNode";
 import { BlockWithAlignableContents } from "@lexical/react/LexicalBlockWithAlignableContents";
+import { useLexicalNodeSelection } from '@lexical/react/useLexicalNodeSelection'
 
 interface ImageCompProps {
   nodeKey: NodeKey;
@@ -19,6 +19,7 @@ type SerializedImageNode = SerializedDecoratorBlockNode & {
 }
 
 const ImageComp = ({ nodeKey, format }: ImageCompProps) => {
+  const [isSelected, setSelected, clearSelection] = useLexicalNodeSelection(nodeKey)
   return (
     <BlockWithAlignableContents
       nodeKey={nodeKey}
@@ -28,7 +29,17 @@ const ImageComp = ({ nodeKey, format }: ImageCompProps) => {
       }}
       format={format}
     >
-      <img className="inline-block border-2 border-transparent group-[.image-focus]/image-block:border-cyan-500" src="https://picsum.photos/192/192" width="50px" height="50px" />
+      <img
+        className="inline-block border-2 border-transparent group-[.image-focus]/image-block:border-cyan-500"
+        src="https://picsum.photos/192/192"
+        width="50px"
+        height="50px"
+        onClick={(e) => {
+          clearSelection();
+          setSelected(!isSelected)
+          e.preventDefault()
+        }}
+      />
     </BlockWithAlignableContents>
   );
 };
