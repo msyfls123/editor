@@ -16,6 +16,7 @@ import { Toolbar } from './toolbar';
 import { classTheme } from './theme';
 import { useMemo } from 'react';
 import { ImageExtension } from './plugins/ImageExtension';
+import { ImageProvider } from './contexts/Image';
 
 const placeholder = 'Enter some rich text...';
 
@@ -51,20 +52,22 @@ export function EditorInner({ initialEditorState, saveContent }: EditorProps) {
 
   return (
     <LexicalExtensionComposer extension={extension} contentEditable={null}>
-      <div className="editor-container my-10 mx-auto rounded-xs text-slate-900 relative leading-5">
-        <Toolbar onSave={saveContent}/>
-        <div className="editor-inner relative">
-          <ContentEditable
+      <ImageProvider>
+        <div className="editor-container my-10 mx-auto rounded-xs text-slate-900 relative leading-5">
+          <Toolbar onSave={saveContent}/>
+          <div className="editor-inner relative">
+            <ContentEditable
             className="editor-input min-h-40 max-w-200 border border-t-mist-400 rounded my-2 resize-none caret-slate-900 relative outline-0 px-3 py-4"
             aria-label="Rich text editor"
             aria-placeholder={placeholder}
             placeholder={
               <div className="text-slate-400 overflow-hidden absolute top-4 left-4 select-none inline-block pointer-events-none">{placeholder}</div>
             }
-          />
-          <ExtensionComponent lexical:extension={TreeViewExtension} />
+            />
+            <ExtensionComponent lexical:extension={TreeViewExtension} />
+          </div>
         </div>
-      </div>
+      </ImageProvider>
     </LexicalExtensionComposer>
   );
 }

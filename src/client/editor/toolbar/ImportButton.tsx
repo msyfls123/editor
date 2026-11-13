@@ -13,8 +13,8 @@ export function ImportButton() {
   const exampleImport = useCallback(() => {
     editor.update(() => {
       const dom = new DOMParser().parseFromString(
-        `<div data-lexical-image-block="true" style="text-align: right;">
-          <img src="https://picsum.photos/192/192" class="inline-block">
+        `<div data-lexical-image-block="true" data-lexical-image-key="editor/10年了2.png" data-lexical-image-url="https://media.ebichu.cc/editor/10年了2.png">
+          <img src="https://media.ebichu.cc/editor/10年了2.png" class="inline-block" width="339px" height="106px">
         </div>`,
         'text/html'
       )

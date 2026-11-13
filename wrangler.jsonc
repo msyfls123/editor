@@ -3,6 +3,9 @@
   "name": "editor",
   "compatibility_date": "2025-08-03",
   "main": "./src/server/index.tsx",
+  "secrets": {
+      "required": ["ACCESS_KEY_ID", "SECRET_ACCESS_KEY"]
+  },
   "durable_objects": {
     "bindings": [
       {
@@ -16,5 +19,16 @@
       "type": "durable-object",
       "storage": "sqlite"
     }
-  }
+  },
+  "r2_buckets": [
+    {
+      "bucket_name": "media",
+      "binding": "R2_MEDIA"
+    }
+  ],
+  "d1_databases": [{
+    "binding": "DB",
+    "database_name": "editor",
+    "database_id": "ee4e3506-87bc-4dd3-990e-80232914f21b"
+  }]
 }

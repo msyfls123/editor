@@ -46,5 +46,27 @@ app.get('/websocket', (c) => {
   return stub.fetch(req)
 })
 
+app.get('/media', async (c) => {
+  const key = c.req.query('key')
+  if (!key) {
+    return c.notFound()
+  }
+  const data = await env.R2_MEDIA.get(key)
+  if (!data?.body) {
+    return c.notFound()
+  }
+  return c.body(data.body, 200)
+})
+
+app.put('/image', async (c) => {
+  const body = await c.req.parseBody()
+  const { key, file } = body
+  await env.R2_MEDIA.put(key as string, file)
+  return c.json({
+    ok: true,
+    url: `https://media.ebichu.cc/${key}`
+  })
+})
+
 export default app
 export { EditorServerDurable }

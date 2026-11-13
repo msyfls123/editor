@@ -1,4 +1,5 @@
 import { DurableObject } from 'cloudflare:workers'
+import { Env } from 'hono';
 
 export class EditorServerDurable extends DurableObject<Env> {
   sessions: Map<WebSocket, { [key: string]: string }>
