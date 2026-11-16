@@ -4,6 +4,7 @@ import { EditorServerDurable } from './EditorServerDurable'
 import { Script, Link, ViteClient, ReactRefresh } from 'vite-ssr-components/react'
 import { renderToReadableStream } from 'react-dom/server'
 import { env } from 'cloudflare:workers'
+import { calcEdgeHash } from './utils/hash'
 
 const app = new Hono()
 
@@ -60,10 +61,15 @@ app.get('/media', async (c) => {
 
 app.put('/image', async (c) => {
   const body = await c.req.parseBody()
-  const { key, file } = body
-  await env.R2_MEDIA.put(key as string, file)
+  const { prefix, file: _file } = body
+  const file = _file as File
+  const ext = file.name.split('.').at(-1)
+  const hash = await calcEdgeHash(file.stream(), file.size)
+  const key = `${prefix}/${hash}.${ext}`
+  await env.R2_MEDIA.put(key, file.slice())
   return c.json({
     ok: true,
+    key,
     url: `https://media.ebichu.cc/${key}`
   })
 })

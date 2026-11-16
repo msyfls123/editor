@@ -62,8 +62,8 @@ export const ImageProvider = ({ children }: { children: ReactNode }) => {
     const file = current.modified ?? current.origin
     if (!file) return
     const formData = new FormData()
-    const key = `editor/${file.name}`
-    formData.append('key', key)
+    const prefix = `editor/default`
+    formData.append('prefix', prefix)
     formData.append('file', file)
 
     const size = await getImageSizeFromFile(file)
@@ -72,19 +72,19 @@ export const ImageProvider = ({ children }: { children: ReactNode }) => {
       method: 'PUT',
       body: formData,
     })
-      .then(res => res.json() as Promise<{ ok: true, url: string }>)
+      .then(res => res.json() as Promise<{ ok: true, url: string, key: string }>)
       .then((data) => {
         if (data.url) {
           editor.update(() => {
             editor.dispatchCommand(INSERT_IMAGE_COMMAND, {
-              key,
+              key: data.key,
               url: data.url,
               size,
             })
           })
         }
         return {
-          key
+          key: data.key
         }
       })
 
