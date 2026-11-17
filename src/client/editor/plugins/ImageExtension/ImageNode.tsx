@@ -55,7 +55,7 @@ const ImageComp = ({ nodeKey, format, url, imageKey, size }: ImageCompProps) => 
       <img
         data-key={imageKey}
         data-url={url}
-        className="inline-block border-2 border-transparent group-[.image-focus]/image-block:border-cyan-500"
+        className="inline-block max-w-full max-h-100 object-contain border-2 border-transparent group-[.image-focus]/image-block:border-cyan-500"
         src={getSafeUrl(imageKey, url) || "https://picsum.photos/192/192"}
         width={`${size.width | 100}px`}
         height={`${size.height | 50}px`}

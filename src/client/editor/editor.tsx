@@ -17,6 +17,7 @@ import { classTheme } from './theme';
 import { useMemo } from 'react';
 import { ImageExtension } from './plugins/ImageExtension';
 import { ImageProvider } from './contexts/Image';
+import { LinkExtension } from './plugins/LinkExtension';
 
 const placeholder = 'Enter some rich text...';
 
@@ -44,6 +45,7 @@ export function EditorInner({ initialEditorState, saveContent }: EditorProps) {
       }),
       TreeViewExtension,
       ImageExtension,
+      LinkExtension,
     ],
     name: '@lexical/examples/react-rich',
     namespace: 'react-rich',

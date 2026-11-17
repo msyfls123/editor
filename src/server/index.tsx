@@ -10,13 +10,14 @@ const app = new Hono()
 
 app.get('/', async (c) => {
   c.header('Content-Type', 'text/html')
+  const suffix = c.req.url.startsWith('http:') ? '( local )' : ''
   return c.body(
     await renderToReadableStream(
       <html>
         <head>
           <meta charSet="UTF-8"/>
           <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-          <title>Editor | ebichu</title>
+          <title>{`Editor ${suffix} | ebichu`}</title>
           <ViteClient />
           <ReactRefresh />
           <Script src='/src/client/app.tsx' />
