@@ -37,15 +37,15 @@ const LinkNodeComponent = ({ url, text, nodeKey }: LinkNodeComponentProps) => {
 
   return (
     <Popover>
-      <PopoverTrigger>
-        <span
+      <PopoverTrigger
+      render={<button
           contentEditable={false}
           className="inline-flex items-center gap-1.5 px-2 py-0.5 mx-1 text-sm bg-blue-50 text-blue-700 border border-blue-200 rounded-md hover:bg-blue-100 transition-colors select-none"
         >
           <Link className="w-3.5 h-3.5 rounded-sm"></Link>
           <span className="font-medium underline">{text || url}</span>
-        </span>
-      </PopoverTrigger>
+        </button>}
+      />
       <PopoverContent className="flex flex-row gap-2 w-auto">
         <a
           href={url}
@@ -95,6 +95,12 @@ export class MyLinkNode extends DecoratorTextNode {
   static importJSON(_serializedNode: SerializedLindeNode): MyLinkNode {
     const node = $createMyLinkNode(_serializedNode.$);
     return node
+  }
+
+  createDOM(config: EditorConfig, editor: LexicalEditor) {
+    const dom = super.createDOM(config, editor)
+    dom.setAttribute('data-lexical-my-link', 'true')
+    return dom
   }
 
   exportDOM() {

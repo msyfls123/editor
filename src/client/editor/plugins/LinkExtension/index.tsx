@@ -1,12 +1,14 @@
-import { TOGGLE_LINK_COMMAND } from '@lexical/link';
+import { LinkNode, TOGGLE_LINK_COMMAND } from '@lexical/link';
 import { $getSelection, $isRangeSelection, COMMAND_PRIORITY_HIGH, configExtension, defineExtension } from 'lexical';
-import { $createMyLinkNode, MyLinkNode } from './LinkNode';
+import { $createMyLinkNode, $isMyLinkNode, MyLinkNode } from './LinkNode';
 
 export const LinkExtension = defineExtension({
   name: 'editor/link',
-  nodes: () => [MyLinkNode],
+  nodes: () => [
+    MyLinkNode,
+  ],
   register(editor) {
-    return editor.registerCommand(
+    const unregisterToggle = editor.registerCommand(
       TOGGLE_LINK_COMMAND,
       (payload) => {
         if (!payload) return false;
@@ -31,5 +33,18 @@ export const LinkExtension = defineExtension({
       },
       COMMAND_PRIORITY_HIGH
     );
+    const unregisterTransform = editor.registerNodeTransform(LinkNode, node => {
+      const textContent = node.getTextContent()
+      const url = node.getURL()
+      const myLink = $createMyLinkNode({
+        text: textContent,
+        url,
+      })
+      node.replace(myLink)
+    })
+    return () => {
+      unregisterToggle()
+      unregisterTransform()
+    }
   }
 })

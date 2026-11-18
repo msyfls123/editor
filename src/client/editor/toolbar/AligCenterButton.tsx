@@ -10,6 +10,7 @@ export function AlignCenterButton({ formatStatus }: CommonButtonProps) {
     <Button
       variant="outline"
       state={formatStatus}
+      className="text-"
       onClick={() => editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'center')}>
         <AlignCenter/>
     </Button>

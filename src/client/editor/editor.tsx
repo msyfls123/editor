@@ -1,8 +1,8 @@
 import {ClipboardDOMImportExtension} from '@lexical/clipboard';
 import {
   AutoFocusExtension,
-  EditorStateExtension,
   HMRExtension,
+  TabIndentationExtension,
 } from '@lexical/extension';
 import {HistoryExtension} from '@lexical/history';
 import {ExtensionComponent} from '@lexical/react/ExtensionComponent';
@@ -11,6 +11,10 @@ import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer'
 import {TreeViewExtension} from '@lexical/react/TreeViewExtension';
 import {RichTextExtension} from '@lexical/rich-text';
 import { configExtension, defineExtension } from 'lexical';
+import { MdastCommonMarkExtension, MdastExtension, MdastGfmExtension, MdastShortcutsExtension } from '@lexical/mdast'
+import { ListExtension } from '@lexical/list'
+import { CodeExtension, CodeIndentExtension } from '@lexical/code'
+import {TableExtension} from '@lexical/table'
 
 import { Toolbar } from './toolbar';
 import { classTheme } from './theme';
@@ -18,6 +22,7 @@ import { useMemo } from 'react';
 import { ImageExtension } from './plugins/ImageExtension';
 import { ImageProvider } from './contexts/Image';
 import { LinkExtension } from './plugins/LinkExtension';
+import { TabIndentationPlugin } from '@lexical/react/LexicalTabIndentationPlugin';
 
 const placeholder = 'Enter some rich text...';
 
@@ -34,16 +39,29 @@ export function EditorInner({ initialEditorState, saveContent }: EditorProps) {
       $initialEditorState: initialEditorState
     } : {}),
     dependencies: [
-      configExtension(HMRExtension, {hot: import.meta.hot ?? null}),
-      RichTextExtension,
+      configExtension(HMRExtension, { hot: import.meta.hot ?? null }),
+      configExtension(RichTextExtension, {
+        escapeFormatTriggers: {
+          code: {arrow: true, click: true, enter: true, onlyAtBoundary: true},
+        },
+      }),
       ClipboardDOMImportExtension,
-      EditorStateExtension,
       HistoryExtension,
       // Let the documentation page keep focus when this example is embedded.
       configExtension(AutoFocusExtension, {
         disabled: isEmbedded,
       }),
       TreeViewExtension,
+      // content
+      ListExtension,
+      CodeExtension,
+      MdastCommonMarkExtension,
+      MdastGfmExtension,
+      MdastExtension,
+      MdastShortcutsExtension,
+      TableExtension,
+      TabIndentationExtension,
+      CodeIndentExtension,
       ImageExtension,
       LinkExtension,
     ],
@@ -66,7 +84,11 @@ export function EditorInner({ initialEditorState, saveContent }: EditorProps) {
               <div className="text-slate-400 overflow-hidden absolute top-4 left-4 select-none inline-block pointer-events-none">{placeholder}</div>
             }
             />
-            <ExtensionComponent lexical:extension={TreeViewExtension} />
+            <TabIndentationPlugin maxIndent={7} />
+            <ExtensionComponent
+              viewClassName='overflow-x-auto'
+              lexical:extension={TreeViewExtension}
+            />
           </div>
         </div>
       </ImageProvider>

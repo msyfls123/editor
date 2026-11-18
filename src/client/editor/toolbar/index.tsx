@@ -15,6 +15,7 @@ import { ImportButton } from "./ImportButton"
 import { useTextFormat } from "../hooks/useTextFormat"
 import { FormatStatus } from "@/constants/format"
 import { LinkButton } from "./LinkButton"
+import { TableButton } from "./TableButton"
 
 interface ToolbarProps {
 onSave: (text: string) => void
@@ -42,6 +43,7 @@ export const Toolbar = ({ onSave }: ToolbarProps) => {
         <ImageButton />
         <ImportButton />
         <LinkButton />
+        <TableButton />
       </ButtonGroup>
 
       <ButtonGroup>

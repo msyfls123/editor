@@ -1,10 +1,10 @@
-import { ReactNode, SubmitEvent, useCallback, useRef } from "react"
+import { ReactElement, ReactNode, SubmitEvent, useCallback, useRef } from "react"
 import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 
 interface LinkDialogProps {
-  children: ReactNode
+  children: ReactElement
   open: boolean
   onSubmit: (payload: { text: string, url: string }) => void
   onCancel: () => void
@@ -27,7 +27,7 @@ export const LinkDialog = ({ children, open, onSubmit, onCancel, text, url }: Li
   return <Dialog open={open} onOpenChange={(v) => {
     if (!v) onCancel()
   }}>
-    <DialogTrigger>{children}</DialogTrigger>
+    <DialogTrigger render={children}></DialogTrigger>
     <DialogContent>
       <DialogHeader>
         <DialogTitle>Link</DialogTitle>
