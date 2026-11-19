@@ -26,7 +26,7 @@ export const Toolbar = ({ onSave }: ToolbarProps) => {
   const format = useTextFormat()
 
   return (
-    <div className="w-full flex flex-wrap gap-3" >
+    <div className="sticky top-4 bg-slate-50/50 z-50 w-full flex flex-wrap gap-3" >
       <ButtonGroup>
         <BoldButton formatStatus={format.bold} />
         <ItalicButton formatStatus={format.italic} />

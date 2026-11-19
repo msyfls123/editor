@@ -36,6 +36,9 @@ importers:
       '@cloudflare/vite-plugin':
         specifier: ^1.44.0
         version: 1.65.0(@types/node@26.6.5)(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0))(workerd@1.20261023.1)(wrangler@4.153.0(@types/node@26.6.5))
+      '@floating-ui/react':
+        specifier: ^0.27.20
+        version: 0.27.20(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@lexical/clipboard':
         specifier: 0.53.0
         version: 0.53.0

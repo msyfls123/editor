@@ -23,6 +23,7 @@ import { ImageExtension } from './plugins/ImageExtension';
 import { ImageProvider } from './contexts/Image';
 import { LinkExtension } from './plugins/LinkExtension';
 import { TabIndentationPlugin } from '@lexical/react/LexicalTabIndentationPlugin';
+import { TableToolbarPlugin } from '@/editor/plugins/TableToolbarPlugin';
 
 const placeholder = 'Enter some rich text...';
 
@@ -85,6 +86,7 @@ export function EditorInner({ initialEditorState, saveContent }: EditorProps) {
             }
             />
             <TabIndentationPlugin maxIndent={7} />
+            <TableToolbarPlugin />
             <ExtensionComponent
               viewClassName='overflow-x-auto'
               lexical:extension={TreeViewExtension}

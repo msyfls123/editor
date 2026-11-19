@@ -22,5 +22,9 @@ export const classTheme: EditorThemeClasses = {
     listitem: ''
   },
   code: 'block my-2 rounded-md p-2 bg-slate-50 border-2 border-sky-200',
-  tableScrollableWrapper: ''
+  tableScrollableWrapper: '',
+  table: 'border border-slate-300 my-4',
+  tableCell: 'p-1 not-last:border-r border-slate-300 min-w-10',
+  tableRow: 'not-last:border-b border-slate-300',
+  tableCellHeader: 'bg-slate-200/50 py-2'
 }
