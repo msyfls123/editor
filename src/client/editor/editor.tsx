@@ -24,6 +24,7 @@ import { ImageProvider } from './contexts/Image';
 import { LinkExtension } from './plugins/LinkExtension';
 import { TabIndentationPlugin } from '@lexical/react/LexicalTabIndentationPlugin';
 import { TableToolbarPlugin } from '@/editor/plugins/TableToolbarPlugin';
+import { DiagramExtension } from '@/editor/plugins/DiagramExtension';
 
 const placeholder = 'Enter some rich text...';
 
@@ -63,8 +64,10 @@ export function EditorInner({ initialEditorState, saveContent }: EditorProps) {
       TableExtension,
       TabIndentationExtension,
       CodeIndentExtension,
+      // custom
       ImageExtension,
       LinkExtension,
+      DiagramExtension,
     ],
     name: '@lexical/examples/react-rich',
     namespace: 'react-rich',

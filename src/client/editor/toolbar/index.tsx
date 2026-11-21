@@ -16,6 +16,7 @@ import { useTextFormat } from "../hooks/useTextFormat"
 import { FormatStatus } from "@/constants/format"
 import { LinkButton } from "./LinkButton"
 import { TableButton } from "./TableButton"
+import { DiagramButton } from "@/editor/toolbar/DiagramNode"
 
 interface ToolbarProps {
 onSave: (text: string) => void
@@ -26,7 +27,7 @@ export const Toolbar = ({ onSave }: ToolbarProps) => {
   const format = useTextFormat()
 
   return (
-    <div className="sticky top-4 bg-slate-50/50 z-50 w-full flex flex-wrap gap-3" >
+    <div className="sticky top-0 p-2 -mx-2 bg-slate-300/80 z-50 w-100vw flex flex-wrap gap-3" >
       <ButtonGroup>
         <BoldButton formatStatus={format.bold} />
         <ItalicButton formatStatus={format.italic} />
@@ -44,6 +45,7 @@ export const Toolbar = ({ onSave }: ToolbarProps) => {
         <ImportButton />
         <LinkButton />
         <TableButton />
+        <DiagramButton />
       </ButtonGroup>
 
       <ButtonGroup>
