@@ -1,4 +1,4 @@
-import { FormatState, FormatStatus } from "@/constants/format";
+import { FormatState, FormatStatus } from "@/editor/constants/format";
 import { $isDecoratorTextNode } from "@lexical/extension";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { $isDecoratorBlockNode } from "@lexical/react/LexicalDecoratorBlockNode";

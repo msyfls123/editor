@@ -13,10 +13,10 @@ import { toast } from "@/components/ui/toast"
 import { ImageButton } from "./Image"
 import { ImportButton } from "./ImportButton"
 import { useTextFormat } from "../hooks/useTextFormat"
-import { FormatStatus } from "@/constants/format"
+import { FormatStatus } from "@/editor/constants/format"
 import { LinkButton } from "./LinkButton"
 import { TableButton } from "./TableButton"
-import { DiagramButton } from "@/editor/toolbar/DiagramNode"
+import { DiagramButton } from "@/editor/toolbar/DiagramButton"
 
 interface ToolbarProps {
 onSave: (text: string) => void

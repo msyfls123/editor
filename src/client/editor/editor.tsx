@@ -15,6 +15,7 @@ import { MdastCommonMarkExtension, MdastExtension, MdastGfmExtension, MdastShort
 import { ListExtension } from '@lexical/list'
 import { CodeExtension, CodeIndentExtension } from '@lexical/code'
 import {TableExtension} from '@lexical/table'
+import { CodePrismExtension } from '@lexical/code-prism'
 
 import { Toolbar } from './toolbar';
 import { classTheme } from './theme';
@@ -43,9 +44,9 @@ export function EditorInner({ initialEditorState, saveContent }: EditorProps) {
     dependencies: [
       configExtension(HMRExtension, { hot: import.meta.hot ?? null }),
       configExtension(RichTextExtension, {
-        escapeFormatTriggers: {
-          code: {arrow: true, click: true, enter: true, onlyAtBoundary: true},
-        },
+        // escapeFormatTriggers: {
+        //   code: {arrow: true, click: true, enter: true, onlyAtBoundary: true},
+        // },
       }),
       ClipboardDOMImportExtension,
       HistoryExtension,
@@ -64,6 +65,7 @@ export function EditorInner({ initialEditorState, saveContent }: EditorProps) {
       TableExtension,
       TabIndentationExtension,
       CodeIndentExtension,
+      CodePrismExtension,
       // custom
       ImageExtension,
       LinkExtension,

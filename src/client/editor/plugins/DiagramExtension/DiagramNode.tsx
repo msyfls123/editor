@@ -1,21 +1,53 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DecoratorBlockNode } from "@lexical/react/LexicalDecoratorBlockNode";
-import { $create, $createTextNode, $getNodeByKey, $setSlot, EditorConfig, ElementFormatType, ElementNode, isDOMShadowRoot, LexicalEditor, NodeKey } from "lexical";
+import { $create, $createTextNode, $getNodeByKey, $getSlot, $setSlot, EditorConfig, ElementFormatType, ElementNode, isDOMShadowRoot, LexicalEditor, NodeKey } from "lexical";
 import {useLexicalSlotRef} from '@lexical/react/useLexicalSlotRef'
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { JSX } from "react/jsx-runtime";
 import { $createCodeNode } from "@lexical/code";
 import { BlockWithAlignableContents } from "@lexical/react/LexicalBlockWithAlignableContents";
 import { Button } from "@/components/ui/button";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { mount, Mounted } from 'pele'
+import { GraphStar } from "lucide-react";
 
 interface DiagramComponentProps {
   nodeKey: NodeKey
   format: ElementFormatType
 }
 
+enum DiagramTab {
+  CODE = 'CODE',
+  PREVIEW = 'PREVIEW'
+}
+
 const DiagramComponent = ({ nodeKey, format }: DiagramComponentProps) => {
   const [editor] = useLexicalComposerContext()
+  const [tab, setTab] = useState(DiagramTab.CODE)
   const codeRef = useLexicalSlotRef<HTMLDivElement>(editor, nodeKey, 'code')
+  const diagramElRef = useRef<HTMLDivElement | null>(null)
+  const diagramRef = useRef<Mounted | null>(null)
+
+  const updateDiagram = useCallback(() => {
+    if (!diagramElRef.current) return
+    const code = editor.read(() => {
+      return $getCodeFromDigramNode(nodeKey)
+    })
+
+    console.log(code)
+
+    if (diagramRef.current) {
+      diagramRef.current.update(code ?? '')
+    } else {
+      diagramRef.current = mount(diagramElRef.current, code ?? '')
+    }
+  }, [nodeKey])
+
+  useEffect(() => {
+    if (tab !== DiagramTab.PREVIEW) return
+    updateDiagram()
+  }, [tab, updateDiagram])
+
   return (
     <BlockWithAlignableContents
       nodeKey={nodeKey}
@@ -25,12 +57,15 @@ const DiagramComponent = ({ nodeKey, format }: DiagramComponentProps) => {
       }}
       format={format}
     >
-      <Tabs>
+      <Tabs value={tab} onValueChange={setTab}>
         <div className="flex justify-between items-center">
-          <TabsList>
-            <TabsTrigger value="code">Code</TabsTrigger>
-            <TabsTrigger value="preview">Preview</TabsTrigger>
-          </TabsList>
+          <div className="flex items-center space-x-2">
+            <GraphStar className="size-5" />
+            <TabsList>
+              <TabsTrigger value={DiagramTab.CODE}>Code</TabsTrigger>
+              <TabsTrigger value={DiagramTab.PREVIEW}>Preview</TabsTrigger>
+            </TabsList>
+          </div>
           <Button
             variant="destructive"
             onClick={() => {
@@ -42,11 +77,14 @@ const DiagramComponent = ({ nodeKey, format }: DiagramComponentProps) => {
           > Delete </Button>
         </div>
 
-        <TabsContent value="code">
+        <TabsContent value={DiagramTab.CODE} keepMounted>
           <div ref={codeRef}/>
         </TabsContent>
-        <TabsContent value="preview">
-          TBD
+        <TabsContent value={DiagramTab.PREVIEW} keepMounted>
+          <div
+            className="border border-gray-300 p-2"
+            ref={diagramElRef}
+          />
         </TabsContent>
       </Tabs>
 
@@ -126,4 +164,14 @@ export function $createDiagramNode({ code }: CreateDiagramProps = {}) {
 
 export function $isImageNode(node: unknown): node is DiagramNode {
   return node instanceof DiagramNode;
+}
+
+function $getCodeFromDigramNode(nodeKey: NodeKey) {
+  try {
+    const diagramNode = $getNodeByKey(nodeKey)!
+    const codeNode = $getSlot(diagramNode, 'code')
+    return codeNode?.getTextContent()
+  } catch (err) {
+    return null
+  }
 }

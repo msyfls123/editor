@@ -8,7 +8,14 @@ export function DiagramButton() {
   return (
     <Button
       variant="outline"
-      onClick={() => editor.dispatchCommand(INSERT_DIAGRAM_COMMAND)}>
+      onClick={() => editor.dispatchCommand(INSERT_DIAGRAM_COMMAND, {
+        code: `flowchart LR
+  A[Mermaid text] --> B{Flowchart?}
+  B -- Yes --> C[Pele]
+  B -- No --> D[Mermaid]
+  C --> E([SVG])
+  D --> E`
+      })}>
         <GraphHub />
     </Button>
   );

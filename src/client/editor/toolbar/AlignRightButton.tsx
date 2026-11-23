@@ -2,7 +2,7 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import { FORMAT_ELEMENT_COMMAND } from 'lexical';
 import { AlignRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { CommonButtonProps } from '@/constants/format';
+import { CommonButtonProps } from '@/editor/constants/format';
 
 export function AlignRightButton({ formatStatus }: CommonButtonProps) {
   const [editor] = useLexicalComposerContext();

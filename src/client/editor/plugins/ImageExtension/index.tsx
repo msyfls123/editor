@@ -1,4 +1,4 @@
-import { CustomCommand } from "@/constants";
+import { CustomCommand } from "@/editor/constants";
 import { COMMAND_PRIORITY_EDITOR, configExtension, createCommand, defineExtension } from "lexical";
 import { $createImageNode, CreateImageNodeProps, ImageNode } from "./ImageNode";
 import { DOMImportExtension } from "@lexical/html";

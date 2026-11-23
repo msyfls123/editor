@@ -45,6 +45,9 @@ importers:
       '@lexical/code':
         specifier: 0.53.0
         version: 0.53.0
+      '@lexical/code-prism':
+        specifier: 0.53.0
+        version: 0.53.0
       '@lexical/extension':
         specifier: 0.53.0
         version: 0.53.0
@@ -96,6 +99,9 @@ importers:
       lexical:
         specifier: 0.53.0
         version: 0.53.0
+      pele:
+        specifier: ^1.13.0
+        version: 1.13.0
       react:
         specifier: ^19.3.1
         version: 19.3.1
@@ -748,6 +754,14 @@ packages:
 
   '@lexical/code-core@0.53.0':
     resolution: {integrity: sha512-u684OEtS6lb5IQKeFFAPlNfWhdcnKi2ZctOEgK5o2rHd01FF0pG/J57gbTzcpwnyfw98s6c5SnBuxTAXA7EWsA==}
+    peerDependencies:
+      typescript: '>=5.2'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+
+  '@lexical/code-prism@0.53.0':
+    resolution: {integrity: sha512-avnEKuFNdO8GGH3txAnO78hgIeVMCgzBx9vu2ZSCKHu3t2JYAKi8ztC4YplxDdqAJA8DV7sJBrqnwrxysA5fFA==}
     peerDependencies:
       typescript: '>=5.2'
     peerDependenciesMeta:
@@ -2113,6 +2127,10 @@ packages:
   pathe@2.0.3:
     resolution: {integrity: sha512-WUjGcAqP1gQacoQe+OBJsFA7Ld4DyXuUIjZ5cc75cLHvJ7dtNsTugphxIADwspS+AraAUePCKrSVtPLFj/F88w==}
 
+  pele@1.13.0:
+    resolution: {integrity: sha512-Ie8UKY9x00MsuR3jO6AzUwzK2Z6MIV3Tf4EDdITiuk8Uaz8K7g0R082WqsqNaSU8DdgkrRvZThzhit83mi/uiw==}
+    engines: {node: '>=20'}
+
   picocolors@1.1.1:
     resolution: {integrity: sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA==}
 
@@ -2143,6 +2161,10 @@ packages:
   pretty-ms@9.3.1:
     resolution: {integrity: sha512-HzMy3Geq23nVALD/M2LliU+F+M+gVNsvkQWWqeBZ8HDiCgzo6YPJ/Omrmtq24EFrIsk0a3EkQGEd7bDOo+IhGA==}
     engines: {node: '>=18'}
+
+  prismjs@1.30.0:
+    resolution: {integrity: sha512-DEvV2ZF2r2/63V+tK8hQvrR2ZGn10srHbXviTlcv7Kpzw8jWiNTqbVgjO3IY8RxrrOUF8VPMQQFysYYYv0YZxw==}
+    engines: {node: '>=6'}
 
   prompts@2.4.2:
     resolution: {integrity: sha512-NxNv/kLguCA7p3jE8oL2aEBsrJWgAakBpgmgK6lpPWV+WuOmY6r2/zbAVnP+T8bQlA0nzHXSJSJW0Hq7ylaD2Q==}
@@ -3069,6 +3091,13 @@ snapshots:
       '@lexical/internal': 0.53.0
       '@lexical/utils': 0.53.0
       lexical: 0.53.0
+
+  '@lexical/code-prism@0.53.0':
+    dependencies:
+      '@lexical/code-core': 0.53.0
+      '@lexical/extension': 0.53.0
+      lexical: 0.53.0
+      prismjs: 1.30.0
 
   '@lexical/code@0.53.0':
     dependencies:
@@ -4389,6 +4418,8 @@ snapshots:
 
   pathe@2.0.3: {}
 
+  pele@1.13.0: {}
+
   picocolors@1.1.1: {}
 
   picomatch@2.3.2: {}
@@ -4415,6 +4446,8 @@ snapshots:
   pretty-ms@9.3.1:
     dependencies:
       parse-ms: 4.0.0
+
+  prismjs@1.30.0: {}
 
   prompts@2.4.2:
     dependencies:
