@@ -8,7 +8,7 @@ import { $createCodeNode } from "@lexical/code";
 import { BlockWithAlignableContents } from "@lexical/react/LexicalBlockWithAlignableContents";
 import { Button } from "@/components/ui/button";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { mount, Mounted } from 'pele'
+import type { Mounted } from 'pele'
 import { GraphStar } from "lucide-react";
 
 interface DiagramComponentProps {
@@ -34,12 +34,12 @@ const DiagramComponent = ({ nodeKey, format }: DiagramComponentProps) => {
       return $getCodeFromDigramNode(nodeKey)
     })
 
-    console.log(code)
-
     if (diagramRef.current) {
       diagramRef.current.update(code ?? '')
     } else {
-      diagramRef.current = mount(diagramElRef.current, code ?? '')
+      import('pele').then(({ mount }) => {
+        diagramRef.current = mount(diagramElRef.current!, code ?? '')
+      })
     }
   }, [nodeKey])
 
