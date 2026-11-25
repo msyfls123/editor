@@ -37,6 +37,7 @@ type SerializedImageNode = SerializedDecoratorBlockNode & {
 }
 
 const getSafeUrl = (key: string, url: string) => {
+  if (url.startsWith('/api/resources/')) return url
   if (location.protocol === 'https:') return url
   return `/media?key=${encodeURIComponent(key)}`
 }

@@ -28,8 +28,12 @@
     }
   ],
   "d1_databases": [{
-    "binding": "DB",
+    "binding": "EDITOR_DB",
     "database_name": "editor",
     "database_id": "ee4e3506-87bc-4dd3-990e-80232914f21b"
+  }, {
+    "binding": "AUTH_DB",
+    "database_name": "auth",
+    "database_id": "c587dd5f-964d-49c4-8175-c6f2904a1e03"
   }]
 }

@@ -6,3 +6,5 @@ onlyBuiltDependencies:
 allowBuilds:
   esbuild: true
   workerd: true
+minimumReleaseAgeExclude:
+  - '@ebichu-cc/auth@0.1.3'

@@ -7,7 +7,10 @@ import path from 'path'
 
 export default defineConfig({
   plugins: [
-    cloudflare(),
+    cloudflare({
+      // Share local bindings (D1/R2/DO) with the login worker in ../ebichu.
+      persistState: { path: '../.ebichu-state' },
+    }),
     ssrPlugin({
       hotReload: {
         ignore: ['./src/client/**/*.tsx']

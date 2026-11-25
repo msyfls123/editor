@@ -1,14 +1,42 @@
 import { Hono } from 'hono'
+import type { Context } from 'hono'
+import type { ReactNode } from 'react'
 import { EditorServerDurable } from './EditorServerDurable'
+import {
+  clearSessionCookies,
+  getAuth,
+  getSession,
+  isAllowedOrigin,
+  readSessionToken,
+} from './auth'
+import {
+  deleteResource,
+  getResourceContent,
+  listResources,
+  uploadAnonymousImage,
+  uploadResource,
+} from './resources'
 
 import { Script, Link, ViteClient, ReactRefresh } from 'vite-ssr-components/react'
 import { renderToReadableStream } from 'react-dom/server'
 import { env } from 'cloudflare:workers'
-import { calcEdgeHash } from './utils/hash'
 
 const app = new Hono()
 
-app.get('/', async (c) => {
+const IMAGE_CONTENT_TYPES: Record<string, string> = {
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  gif: 'image/gif',
+  webp: 'image/webp',
+}
+
+function contentTypeForKey(key: string): string {
+  const extension = key.split('.').pop()?.toLowerCase() ?? ''
+  return IMAGE_CONTENT_TYPES[extension] ?? 'application/octet-stream'
+}
+
+async function renderApp(c: Context, title: string, script: ReactNode) {
   c.header('Content-Type', 'text/html')
   const suffix = c.req.url.startsWith('http:') ? '( local )' : ''
   return c.body(
@@ -17,10 +45,10 @@ app.get('/', async (c) => {
         <head>
           <meta charSet="UTF-8"/>
           <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-          <title>{`Editor ${suffix} | ebichu`}</title>
+          <title>{`${title} ${suffix} | ebichu`}</title>
           <ViteClient />
           <ReactRefresh />
-          <Script src='/src/client/app.tsx' />
+          {script}
           <Link href='/src/server/style.css' rel='stylesheet' />
         </head>
         <body>
@@ -29,6 +57,53 @@ app.get('/', async (c) => {
       </html>
     )
   )
+}
+
+function EditorScript() {
+  return <Script src='/src/client/pages/editor.tsx' />
+}
+
+function ResourcesScript() {
+  return <Script src='/src/client/pages/resources.tsx' />
+}
+
+const renderEditorApp = (c: Context) =>
+  renderApp(c, 'Editor', <EditorScript />)
+
+const renderResourcesApp = (c: Context) =>
+  renderApp(c, 'Resources', <ResourcesScript />)
+
+app.get('/', renderEditorApp)
+app.get('/resources', renderResourcesApp)
+
+app.get('/api/me', async (c) => {
+  c.header('Cache-Control', 'no-store')
+
+  const verified = await getSession(c)
+
+  if (!verified) {
+    return c.json({ error: 'Unauthorized' }, 401)
+  }
+
+  return c.json({
+    user: verified.user,
+    session: { expiresAt: verified.session.expiresAt },
+  })
+})
+
+app.post('/api/logout', async (c) => {
+  if (!isAllowedOrigin(c.req.raw)) {
+    return c.json({ error: 'Forbidden origin' }, 403)
+  }
+
+  const token = readSessionToken(c)
+  if (token) {
+    await getAuth().logout(token)
+  }
+
+  clearSessionCookies(c)
+  c.header('Cache-Control', 'no-store')
+  return c.json({ success: true })
 })
 
 app.get('/websocket', (c) => {
@@ -57,23 +132,18 @@ app.get('/media', async (c) => {
   if (!data?.body) {
     return c.notFound()
   }
-  return c.body(data.body, 200)
-})
-
-app.put('/image', async (c) => {
-  const body = await c.req.parseBody()
-  const { prefix, file: _file } = body
-  const file = _file as File
-  const ext = file.name.split('.').at(-1)
-  const hash = await calcEdgeHash(file.stream(), file.size)
-  const key = `${prefix}/${hash}.${ext}`
-  await env.R2_MEDIA.put(key, file.slice())
-  return c.json({
-    ok: true,
-    key,
-    url: `https://media.ebichu.cc/${key}`
+  return c.body(data.body, 200, {
+    'Content-Type': data.httpMetadata?.contentType ?? contentTypeForKey(key),
+    'Cache-Control': 'public, max-age=31536000, immutable',
   })
 })
+
+app.put('/image', uploadAnonymousImage)
+
+app.post('/api/resources', uploadResource)
+app.get('/api/resources', listResources)
+app.get('/api/resources/:resourceId/content', getResourceContent)
+app.delete('/api/resources/:resourceId', deleteResource)
 
 export default app
 export { EditorServerDurable }

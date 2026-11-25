@@ -21,6 +21,7 @@
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.44.0",
+    "@ebichu-cc/auth": "^0.1.3",
     "@floating-ui/react": "^0.27.20",
     "@lexical/clipboard": "0.53.0",
     "@lexical/code": "0.53.0",

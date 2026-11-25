@@ -9,6 +9,7 @@ import { Edit, Send, SendToBack } from "lucide-react";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { toast } from "@/components/ui/toast";
 import { INSERT_IMAGE_COMMAND } from "../plugins/ImageExtension";
+import { useAuth } from "@/components/AuthProvider";
 
 interface ImageItem {
   origin: File
@@ -28,6 +29,7 @@ const ImageContext = createContext<ImageContext>({
 
 export const ImageProvider = ({ children }: { children: ReactNode }) => {
   const [editor] = useLexicalComposerContext();
+  const { state: authState } = useAuth();
   const isMobile = useIsMobile()
   const [current, setCurrent] = useState<ImageItem | null>(null)
   const [isEditing, setIsEditing] = useState(false)
@@ -61,30 +63,54 @@ export const ImageProvider = ({ children }: { children: ReactNode }) => {
     if (!current) return
     const file = current.modified ?? current.origin
     if (!file) return
+
+    if (authState.status === 'loading') {
+      toast.add({
+        type: 'info',
+        description: '正在读取登录状态，请稍后重试',
+      })
+      return
+    }
+
     const formData = new FormData()
-    const prefix = `editor/default`
-    formData.append('prefix', prefix)
     formData.append('file', file)
 
     const size = await getImageSizeFromFile(file)
+    const authenticated = authState.status === 'authenticated'
 
-    const uploadPromise =  fetch('/image', {
-      method: 'PUT',
+    const uploadPromise = fetch(authenticated ? '/api/resources' : '/image', {
+      method: authenticated ? 'POST' : 'PUT',
       body: formData,
     })
-      .then(res => res.json() as Promise<{ ok: true, url: string, key: string }>)
-      .then((data) => {
-        if (data.url) {
-          editor.update(() => {
-            editor.dispatchCommand(INSERT_IMAGE_COMMAND, {
-              key: data.key,
-              url: data.url,
-              size,
-            })
-          })
+      .then(async (res) => {
+        const data = await res.json() as
+          | { ok: true; key: string; url: string }
+          | { ok: true; resource: { resourceId: string; key: string; url: string } }
+          | { ok: false; message?: string }
+
+        if (!res.ok) {
+          throw new Error(('message' in data && data.message) || 'Upload failed')
         }
+        if (!data.ok) {
+          throw new Error(data.message ?? 'Upload failed')
+        }
+        return data
+      })
+      .then((data) => {
+        const result = 'resource' in data
+          ? { key: data.resource.key, url: data.resource.url }
+          : { key: data.key, url: data.url }
+
+        editor.update(() => {
+          editor.dispatchCommand(INSERT_IMAGE_COMMAND, {
+            key: result.key,
+            url: result.url,
+            size,
+          })
+        })
+
         return {
-          key: data.key
+          key: result.key
         }
       })
 
@@ -97,7 +123,7 @@ export const ImageProvider = ({ children }: { children: ReactNode }) => {
     uploadPromise.finally(() => {
       cleanUp()
     })
-  }, [current, editor])
+  }, [current, editor, authState.status])
 
   const memorizedValue = useMemo(() => ({
     current,

@@ -100,6 +100,13 @@
 - **FR-6.3** 只有作者可以读取和修改联网文章；MVP 默认文章私有（见开放问题）。
 - **FR-6.4** D1 保存文章元信息，DO 保存版本；二者职责不得混用。
 
+### FR-7 登录态
+
+- **FR-7.1** 编辑器 MUST 复用 `@ebichu-cc/auth` 和共享 `auth` D1，不实现自己的登录/注册表单。
+- **FR-7.2** 未登录时 MUST 显示登录入口；点击后跳转 `https://login.ebichu.cc/login?return_to=<当前页面>`。
+- **FR-7.3** 登录后 MUST 以 `avatarFor(user.email)` 渲染圆形头像，展示其大写首字母，并在下拉菜单中显示邮箱。
+- **FR-7.4** 下拉菜单 MUST 提供退出登录；退出时撤销当前 session 并清理共享 Cookie。
+
 ## 5. 非功能需求
 
 - **NFR-1 性能**：正常网络下，单次保存的目标 P95 延迟 < 1.5s；版本列表请求不传输完整 EditorState。
@@ -118,6 +125,7 @@
 | D1 `articles` | 文章 id、标题、作者、当前版本号（冗余索引）、时间戳、状态 | 文章元信息权威 |
 | D1 `resources` | 用户资源库元数据（R2 key、文件名、MIME、大小、哈希、状态） | 资源元信息权威 |
 | D1 `article_resources` | 文章与资源的关联（含首次/最后出现的版本） | 关联关系索引 |
+| D1 `auth`（共享） | `users` / `sessions`，由 `@ebichu-cc/auth` 管理 | 登录态权威 |
 | DO SQLite `documents` | 每个文档的当前版本指针 | 版本号权威 |
 | DO SQLite `document_versions` | 不可变版本快照、纯文本、`clientSaveId` | 版本内容权威 |
 | DO SQLite `version_resources` | 每个版本引用的资源 id | 资源引用权威 |
@@ -245,24 +253,31 @@ SQLite 中 `UNIQUE` 允许多个 `NULL`，因此历史数据没有 `client_save_
 
 ### 7.2 认证
 
-- 登录态由 `@ebichu-cc/auth` 提供。Worker 侧 MUST 通过其中间件/辅助函数解析当前用户，并把用户写入请求上下文。
-- 规格只依赖以下最小用户契约：
+- 登录能力复用 `@ebichu-cc/auth`，会话数据放在共享 D1 `auth`（绑定名 `AUTH_DB`）。
+- 编辑器只读登录态，不写登录 Cookie；登录、注册、写入 Cookie 仍由 `login.ebichu.cc` 负责。
+- Worker 通过 `@ebichu-cc/auth` + `@ebichu-cc/auth/d1` 构造 `Auth`，读取共享会话 Cookie：
+  - 生产：`__Secure-ebichu_session`，`Domain=ebichu.cc`。
+  - 本地开发：`ebichu_session`，host-scoped。
+- 当前用户契约：
 
   ```ts
   interface AuthUser {
     id: string
-    username?: string
+    email: string
+    createdAt: number
   }
   ```
 
 - 受保护接口未登录时返回 `401 UNAUTHORIZED`。
-- `@ebichu-cc/auth` 的具体导入路径、Cookie/Token 机制以该包实际导出为准；接入时补充到本节。
-- 当前 `package.json` 尚未声明该依赖，接入时 MUST 补充并重新生成类型。
+- 本地开发时，editor 与 login worker 通过 `persistState` 共享 `D:\git\.ebichu-state`；登录入口指向 `http://<当前主机>:4321/login`，login worker 允许 localhost 的 `return_to`。
+- 前端未登录时跳转到 `https://login.ebichu.cc/login?return_to=<当前页面>`。
 
 ### 7.3 端点
 
 | 方法 | 路径 | 认证 | 说明 |
 | --- | --- | --- | --- |
+| `GET` | `/api/me` | 按 Cookie | 当前用户；未登录返回 401 |
+| `POST` | `/api/logout` | 按 Cookie + Origin | 撤销当前 session 并清理 Cookie |
 | `POST` | `/api/documents` | 是 | 创建文章，返回 `docId` |
 | `GET` | `/api/documents` | 是 | 列出当前用户的文章 |
 | `GET` | `/api/documents/:docId` | 是 | 文章元信息 + 当前版本号 |
@@ -273,10 +288,10 @@ SQLite 中 `UNIQUE` 允许多个 `NULL`，因此历史数据没有 `client_save_
 | `POST` | `/api/documents/:docId/versions/:version/restore` | 是 | 以旧版本为基础生成新版本 |
 | `POST` | `/api/resources` | 是 | 上传资源（multipart） |
 | `GET` | `/api/resources` | 是 | 当前用户的资源库 |
-| `GET` | `/api/resources/:resourceId/content` | 按可见性 | 读取资源文件 |
+| `GET` | `/api/resources/:resourceId/content` | 否 | 旧图片节点兼容端点，公开读取 |
 | `DELETE` | `/api/resources/:resourceId` | 是 | 软删除资源 |
 
-> `/api/resources/:resourceId/content` 的访问控制按资源可见性判断：`private` 仅 owner 可读，`public` 可被任何用户读取。文章可见性启用后还需叠加文章级权限（见开放问题）。
+> 图片渲染统一使用资源返回的 `key` + `url`：线上为 `https://media.ebichu.cc/<key>`，本地客户端换成 `/media?key=<key>`。`/media` 不做鉴权。
 
 创建文章成功：
 
@@ -318,9 +333,12 @@ Content-Type: application/json
 {
   "ok": true,
   "version": 4,
-  "createdAt": 1764123456789
+  "createdAt": 1764123456789,
+  "replayed": false
 }
 ```
+
+- `replayed: true` 表示命中 `clientSaveId` 幂等重放，未创建新版本。
 
 冲突：
 
@@ -354,11 +372,13 @@ file=<binary>
   "ok": true,
   "resource": {
     "resourceId": "res_01J...",
+    "key": "u/<ownerId>/<sha256>.png",
     "filename": "diagram.png",
     "mime": "image/png",
     "size": 123456,
     "visibility": "private",
-    "url": "/api/resources/res_01J.../content"
+    "url": "https://media.ebichu.cc/u/<ownerId>/<sha256>.png",
+    "createdAt": 1764123456789
   },
   "deduped": false
 }
@@ -368,7 +388,31 @@ file=<binary>
 - R2 key 规则：`u/<ownerId>/<sha256>.<ext>`，由服务端生成。
 - 去重 MUST 使用完整文件的 SHA-256。现有 `src/server/utils/hash.ts` 的 `calcEdgeHash` 对大文件只计算首尾各 1 MiB，不能用于资源去重或内容寻址，需要新增完整的流式哈希实现。
 - 上传默认 `visibility = 'private'`；公共资源由后续的管理/分享能力产生，MVP 不提供创建入口。
-- 资源 URL 可以是相对路径或自定义域名；客户端 MUST 以服务端返回的 URL 为准。
+- 资源返回 `key` 和 `url`；客户端 MUST 以 `key` 作为本地 `/media` 的查询参数，以 `url` 作为线上地址。
+- `/media` 不做鉴权，可读取 `R2_MEDIA` 中任意 key；这是当前的简化取舍。
+
+资源列表：
+
+```json
+{
+  "ok": true,
+  "resources": [
+    {
+      "resourceId": "res_01J...",
+      "key": "u/<ownerId>/<sha256>.png",
+      "filename": "diagram.png",
+      "mime": "image/png",
+      "size": 123456,
+      "visibility": "private",
+      "url": "https://media.ebichu.cc/u/<ownerId>/<sha256>.png",
+      "createdAt": 1764123456789
+    }
+  ],
+  "nextBefore": null
+}
+```
+
+`nextBefore` 为下一页游标；为 `null` 表示没有更多数据。
 
 ### 7.6 错误码
 
@@ -480,7 +524,7 @@ flowchart TD
 ## 10. 安全与隐私
 
 - 所有写接口 MUST 经过 `@ebichu-cc/auth`；`author_id` / `owner_id` 只从登录态获取。
-- 文章读取 MUST 校验作者权限；资源读取 MUST 按 `visibility` 校验：`private` 仅 owner，`public` 可读。MVP 文章默认私有。
+- 文章读取 MUST 校验作者权限；图片/资源文件通过公开 `/media` 或 CDN 读取，不做鉴权。`visibility` 目前仅用于资源库展示。
 - HTML/Markdown 导入与粘贴 MUST 做清洗，禁止脚本、事件属性和危险 URL（`javascript:` 等）。
 - Mermaid 图渲染 SHOULD 禁用或限制可执行内容；不得直接插入未清洗的 HTML。
 - 资源上传 MUST 校验 MIME 与大小；不得信任客户端 `Content-Type` 和文件名后缀。
@@ -508,6 +552,9 @@ flowchart TD
 
 ### 12.2 验收清单
 
+- [ ] 登录后从上头像菜单进入 `/resources`，能看到资源 id、上传时间、大小，并可打开资源链接；分页可用。
+- [ ] 未登录时显示“登录”，点击后跳到 `login.ebichu.cc/login?return_to=...`。
+- [ ] 登录后显示圆形头像（邮箱首字母大写）和邮箱；下拉菜单可以退出登录。
 - [ ] 未登录时可以临时编辑；刷新后内容仍在；Network 面板没有写请求。
 - [ ] 登录后创建文章，手动保存生成 v1；再次保存生成 v2。
 - [ ] 编辑后显示“未保存”；保存成功后标识消失。
@@ -538,7 +585,7 @@ M1–M3 是联网编辑的最小闭环；M4、M5 可按实际优先级并行。
 ## 14. 开放问题
 
 1. 文章是否始终私有？公开阅读/分享链接的产品形态未定，会影响文章权限与资源缓存策略。
-2. `@ebichu-cc/auth` 的具体中间件签名、会话存储和类型导出；接入时补充到 7.2。
+2. 共享本地状态目录（`D:\git\.ebichu-state`）在 schema 变更或切换分支时的清理策略。
 3. 标题是否需要在版本历史中留痕？MVP 暂不记录。
 4. 资源是走同源 `/api/resources/:id/content` 还是公开自定义域名？前者便于鉴权，后者便于 CDN。
 5. 资源物理删除的宽限期与 GC 频率。
@@ -557,11 +604,15 @@ M1–M3 是联网编辑的最小闭环；M4、M5 可按实际优先级并行。
 
 ## 附录 B：与当前代码的差异
 
-- `src/server/EditorServerDurable.ts` 目前是 WebSocket echo demo，尚未实现版本存储。
+- `src/server/EditorServerDurable.ts` 已加入 SQLite schema、`PRAGMA user_version` 迁移和 `saveVersion` 骨架；HTTP/RPC 接入与客户端保存流程仍待实现。WebSocket echo 仍在，但不属于 MVP 契约。
+- `migrations/0001_init.sql` 已添加 D1 表结构；资源接口已开始使用 `EDITOR_DB`。
 - `src/client/editor/hooks/usePersistence.ts` 目前只用 `localStorage` 保存单个 `EDITOR_STATE`。
-- `wrangler.jsonc` 已声明 D1 `DB`、R2 `R2_MEDIA` 和 DO，但 D1 尚未在代码中使用。
+- `wrangler.jsonc` 已声明 D1 `EDITOR_DB`、共享 `AUTH_DB`、R2 `R2_MEDIA` 和 DO；`EDITOR_DB` 已用于资源元数据。
 - `src/server/index.tsx` 的 WebSocket 查询参数目前叫 `article`，需统一为 `docId`。
-- `src/server/utils/hash.ts` 的 `calcEdgeHash` 对大于 2 MiB 的文件只哈希首尾各 1 MiB，属于边缘哈希，不能用于资源去重或内容寻址；资源库需要完整的流式 SHA-256。
-- `EditorServerDurable` 现有的 WebSocket 会话管理是 demo；MVP 不需要 DO WebSocket，可移除或保留到 M6。
-- 现有 `PUT /image` 没有资源归属和可见性模型，需要迁移到 `resources` 表。
-- `@ebichu-cc/auth` 尚未加入依赖，也未在 Worker 中接入。
+- 资源上传已改用完整 SHA-256（`sha256Hex`）；`calcEdgeHash` 不再用于上传去重。
+- `PUT /image` 已改为匿名上传到 `anonymous/image/`；`GET /media` 不做鉴权，并保留旧匿名/历史资源可读。
+- 登录用户走 `POST /api/resources`；`GET /api/resources`、`DELETE /api/resources/:resourceId` 已实现，`ImageProvider` 已按登录态分流。
+- 图片 URL 统一为 `https://media.ebichu.cc/<key>`，本地由 `ImageNode` 换成 `/media?key=<key>`。
+- 保留公开的 `GET /api/resources/:resourceId/content`，仅供早期 `/api/resources/.../content` 图片节点兼容使用。
+- `@ebichu-cc/auth` 已作为 devDependency 安装；`src/server/auth.ts` 已通过共享 `AUTH_DB` 接入登录态，`/api/me` 与 `/api/logout` 已实现。
+- `src/client/components/AuthProvider.tsx` / `AuthMenu.tsx` 已实现登录态共享、登录跳转、头像和退出登录。

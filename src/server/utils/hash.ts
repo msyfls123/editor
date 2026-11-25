@@ -1,5 +1,4 @@
 const CHUNK_SIZE = 1 * 1024 * 1024
-import { createHash } from 'node:crypto'
 
 function pushRing(ring: Uint8Array, chunk: Uint8Array, pos: number): number {
   let offset = 0;
@@ -30,6 +29,18 @@ function toBase64Url(bytes: Uint8Array): string {
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
     .replace(/=/g, '');
+}
+
+function toHex(bytes: Uint8Array): string {
+  return Array.from(bytes)
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+/** Full SHA-256 of the input, hex encoded. Suitable for content addressing. */
+export async function sha256Hex(data: ArrayBuffer | Uint8Array): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', new Uint8Array(data));
+  return toHex(new Uint8Array(digest));
 }
 
 export async function calcEdgeHash(
