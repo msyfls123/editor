@@ -288,7 +288,6 @@ SQLite 中 `UNIQUE` 允许多个 `NULL`，因此历史数据没有 `client_save_
 | `POST` | `/api/documents/:docId/versions/:version/restore` | 是 | 以旧版本为基础生成新版本 |
 | `POST` | `/api/resources` | 是 | 上传资源（multipart） |
 | `GET` | `/api/resources` | 是 | 当前用户的资源库 |
-| `GET` | `/api/resources/:resourceId/content` | 否 | 旧图片节点兼容端点，公开读取 |
 | `DELETE` | `/api/resources/:resourceId` | 是 | 软删除资源 |
 
 > 图片渲染统一使用资源返回的 `key` + `url`：线上为 `https://media.ebichu.cc/<key>`，本地客户端换成 `/media?key=<key>`。`/media` 不做鉴权。
@@ -587,7 +586,7 @@ M1–M3 是联网编辑的最小闭环；M4、M5 可按实际优先级并行。
 1. 文章是否始终私有？公开阅读/分享链接的产品形态未定，会影响文章权限与资源缓存策略。
 2. 共享本地状态目录（`D:\git\.ebichu-state`）在 schema 变更或切换分支时的清理策略。
 3. 标题是否需要在版本历史中留痕？MVP 暂不记录。
-4. 资源是走同源 `/api/resources/:id/content` 还是公开自定义域名？前者便于鉴权，后者便于 CDN。
+4. 资源公开读取的边界（当前 `/media` 无鉴权）是否长期保持。
 5. 资源物理删除的宽限期与 GC 频率。
 6. 公共/共享资源的创建、审核、配额和可见性模型（`public`、组织内共享等）。
 7. Mermaid 图的数据存储、渲染环境和安全边界（是否允许外部链接、脚本）。
@@ -613,6 +612,6 @@ M1–M3 是联网编辑的最小闭环；M4、M5 可按实际优先级并行。
 - `PUT /image` 已改为匿名上传到 `anonymous/image/`；`GET /media` 不做鉴权，并保留旧匿名/历史资源可读。
 - 登录用户走 `POST /api/resources`；`GET /api/resources`、`DELETE /api/resources/:resourceId` 已实现，`ImageProvider` 已按登录态分流。
 - 图片 URL 统一为 `https://media.ebichu.cc/<key>`，本地由 `ImageNode` 换成 `/media?key=<key>`。
-- 保留公开的 `GET /api/resources/:resourceId/content`，仅供早期 `/api/resources/.../content` 图片节点兼容使用。
+- 资源接口仅保留上传、列表和软删除；图片统一走公开 CDN / `/media`。
 - `@ebichu-cc/auth` 已作为 devDependency 安装；`src/server/auth.ts` 已通过共享 `AUTH_DB` 接入登录态，`/api/me` 与 `/api/logout` 已实现。
 - `src/client/components/AuthProvider.tsx` / `AuthMenu.tsx` 已实现登录态共享、登录跳转、头像和退出登录。

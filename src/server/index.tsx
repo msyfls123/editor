@@ -11,7 +11,6 @@ import {
 } from './auth'
 import {
   deleteResource,
-  getResourceContent,
   listResources,
   uploadAnonymousImage,
   uploadResource,
@@ -142,7 +141,6 @@ app.put('/image', uploadAnonymousImage)
 
 app.post('/api/resources', uploadResource)
 app.get('/api/resources', listResources)
-app.get('/api/resources/:resourceId/content', getResourceContent)
 app.delete('/api/resources/:resourceId', deleteResource)
 
 export default app

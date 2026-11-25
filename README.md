@@ -71,7 +71,7 @@ flowchart LR
 ## 兼容性
 
 - 旧 R2 key（如 `editor/default/**`、`editor/**`）不移动、不删除，原 CDN URL 和本地 `/media?key=` 都可继续读取。
-- `localStorage` 的 `EDITOR_STATE` 结构未变；旧图片节点（包括早期 `/api/resources/:id/content` URL）仍能正常显示。
+- `localStorage` 的 `EDITOR_STATE` 结构未变；旧图片节点仍能正常显示。
 - 新上传：登录用户写入 `u/<ownerId>/<sha256>.<ext>`，匿名用户写入 `anonymous/image/<sha256>.<ext>`。
 - 本地联调登录态时，editor 与 login worker 需要共享同一个 `AUTH_DB` 本地持久化目录（例如同一个 `--persist-to`），否则 `/api/me` 会返回 401。
 - R2 只存资源文件；资源元数据、可见性和归属以 D1 为准。

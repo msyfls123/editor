@@ -198,34 +198,6 @@ export async function uploadResource(c: Context): Promise<Response> {
   })
 }
 
-/** Public compatibility endpoint for image nodes created before CDN URLs. */
-export async function getResourceContent(c: Context): Promise<Response> {
-  const resourceId = c.req.param('resourceId')
-  if (!resourceId) {
-    return fail(c, 404, 'NOT_FOUND', 'Resource not found')
-  }
-
-  const row = await env.EDITOR_DB.prepare(
-    `SELECT object_key, mime FROM resources WHERE resource_id = ?`,
-  )
-    .bind(resourceId)
-    .first<Pick<ResourceRow, 'object_key' | 'mime'>>()
-
-  if (!row) {
-    return fail(c, 404, 'NOT_FOUND', 'Resource not found')
-  }
-
-  const object = await env.R2_MEDIA.get(row.object_key)
-  if (!object?.body) {
-    return fail(c, 404, 'NOT_FOUND', 'Resource content not found')
-  }
-
-  return c.body(object.body, 200, {
-    'Content-Type': object.httpMetadata?.contentType ?? row.mime,
-    'Cache-Control': 'public, max-age=31536000, immutable',
-  })
-}
-
 export async function listResources(c: Context): Promise<Response> {
   const session = await getSession(c)
   if (!session) {
