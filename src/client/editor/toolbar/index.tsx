@@ -17,6 +17,7 @@ import { FormatStatus } from "@/editor/constants/format"
 import { LinkButton } from "./LinkButton"
 import { TableButton } from "./TableButton"
 import { DiagramButton } from "@/editor/toolbar/DiagramButton"
+import { BlockTypeSelect } from "@/editor/toolbar/BlockTypeSelect"
 
 interface ToolbarProps {
 onSave: (text: string) => void
@@ -28,6 +29,9 @@ export const Toolbar = ({ onSave }: ToolbarProps) => {
 
   return (
     <div className="sticky top-0 p-2 -mx-2 bg-slate-300/80 z-50 w-100vw flex flex-wrap gap-3" >
+      <ButtonGroup>
+        <BlockTypeSelect />
+      </ButtonGroup>
       <ButtonGroup>
         <BoldButton formatStatus={format.bold} />
         <ItalicButton formatStatus={format.italic} />

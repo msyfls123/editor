@@ -34,6 +34,7 @@
     "@lexical/mdast": "0.53.0",
     "@lexical/react": "0.53.0",
     "@lexical/rich-text": "0.53.0",
+    "@lexical/selection": "0.53.0",
     "@lexical/table": "0.53.0",
     "@lexical/utils": "0.53.0",
     "@tailwindcss/vite": "^4.3.3",

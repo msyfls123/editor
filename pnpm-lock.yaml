@@ -75,6 +75,9 @@ importers:
       '@lexical/rich-text':
         specifier: 0.53.0
         version: 0.53.0
+      '@lexical/selection':
+        specifier: 0.53.0
+        version: 0.53.0
       '@lexical/table':
         specifier: 0.53.0
         version: 0.53.0
