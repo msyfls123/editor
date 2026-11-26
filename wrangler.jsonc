@@ -30,8 +30,11 @@
   "d1_databases": [{
     "binding": "EDITOR_DB",
     "database_name": "editor",
-    "database_id": "ee4e3506-87bc-4dd3-990e-80232914f21b"
+    "database_id": "ee4e3506-87bc-4dd3-990e-80232914f21b",
+    "migrations_dir": "migrations"
   }, {
+    // The auth schema is owned by the login worker / @ebichu-cc/auth.
+    // Never run `migrations/` against this database from the editor project.
     "binding": "AUTH_DB",
     "database_name": "auth",
     "database_id": "c587dd5f-964d-49c4-8175-c6f2904a1e03"

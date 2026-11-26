@@ -48,7 +48,7 @@ pnpm cf-typegen
 `pnpm deploy` 与 Cloudflare 的自动构建都只构建并上传 Worker，**不会应用 D1 migration**。远端 `editor` D1 首次部署或 `migrations/` 变更后，需要显式执行：
 
 ```txt
-pnpm wrangler d1 migrations apply editor --remote
+pnpm db:migrate:remote
 ```
 
 共享的 `auth` D1 由 login worker 负责迁移，editor 不修改它。DO 的 SQLite schema 在首次访问时由构造函数自动迁移，不需要部署前操作。
@@ -73,7 +73,7 @@ flowchart LR
 
 ## 数据存储
 
-- D1 表结构在 `migrations/0001_init.sql`，用 `pnpm wrangler d1 migrations apply editor --local` 应用到本地。
+- D1 表结构在 `migrations/0001_init.sql`，用 `pnpm db:migrate:local` 应用到本地。
 - DO 的 schema 在 `src/server/EditorServerDurable.ts` 内，通过 `schema_migrations` 表在构造函数中自动迁移（workerd 的 DO SQLite 不支持 `PRAGMA user_version`）。
 - `AUTH_DB` 绑定共享 `auth` D1，仅用于读取登录态和退出登录；迁移由 login worker 负责。
 - 图片 URL 统一为线上 `https://media.ebichu.cc/<key>`，本地由 `ImageNode` 换成 `/media?key=<key>`；`/media` 不做鉴权。
@@ -110,8 +110,8 @@ pnpm dev         # http://localhost:5173
 首次或清空本地状态后，需要分别应用 migration：
 
 ```txt
-# editor
-pnpm wrangler d1 migrations apply editor --local --persist-to ../.ebichu-state
+# editor（使用 package.json 中的脚本，已包含 --persist-to ../.ebichu-state）
+pnpm db:migrate:local
 
 # 在 ../ebichu/apps/ebichu-login 下
 pnpm exec wrangler d1 migrations apply auth --local --persist-to ../../../.ebichu-state
@@ -198,5 +198,6 @@ SPEC.md
 | `pnpm preview` | 构建并本地预览 |
 | `pnpm deploy` | 构建并部署到 Cloudflare |
 | `pnpm cf-typegen` | 根据 `wrangler.jsonc` 重新生成 `Env` 类型 |
-| `pnpm wrangler d1 migrations apply editor --local` | 本地应用 D1 migration |
-| `pnpm wrangler d1 migrations apply editor --remote` | 远端应用 D1 migration |
+| `pnpm db:migrate:create <name>` | 新建 `EDITOR_DB` 的 D1 migration 文件 |
+| `pnpm db:migrate:local` | 将 `EDITOR_DB` migration 应用到本地（`../.ebichu-state`） |
+| `pnpm db:migrate:remote` | 将 `EDITOR_DB` migration 应用到远端 |

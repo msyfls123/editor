@@ -7,6 +7,9 @@
     "preview": "vite build && vite preview",
     "deploy": "vite build && wrangler deploy",
     "cf-typegen": "wrangler types --env-interface CloudflareBindings",
+    "db:migrate:create": "wrangler d1 migrations create editor",
+    "db:migrate:local": "wrangler d1 migrations apply editor --local --persist-to ../.ebichu-state",
+    "db:migrate:remote": "wrangler d1 migrations apply editor --remote",
     "add": "shadcn add"
   },
   "dependencies": {
