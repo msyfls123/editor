@@ -3,12 +3,25 @@ import type { Context } from 'hono'
 import type { ReactNode } from 'react'
 import { EditorServerDurable } from './EditorServerDurable'
 import {
+  attachSession,
   clearSessionCookies,
   getAuth,
-  getSession,
   isAllowedOrigin,
   readSessionToken,
+  requireOrigin,
+  requireSession,
 } from './auth'
+import type { AppEnv } from './auth'
+import {
+  createDocument,
+  getDocument,
+  getDocumentVersion,
+  listDocuments,
+  listDocumentVersions,
+  restoreDocumentVersion,
+  saveDocumentVersion,
+  updateDocument,
+} from './documents'
 import {
   deleteResource,
   listResources,
@@ -20,7 +33,7 @@ import { Script, Link, ViteClient, ReactRefresh } from 'vite-ssr-components/reac
 import { renderToReadableStream } from 'react-dom/server'
 import { env } from 'cloudflare:workers'
 
-const app = new Hono()
+const app = new Hono<AppEnv>()
 
 const IMAGE_CONTENT_TYPES: Record<string, string> = {
   jpg: 'image/jpeg',
@@ -58,35 +71,60 @@ async function renderApp(c: Context, title: string, script: ReactNode) {
   )
 }
 
-function EditorScript() {
-  return <Script src='/src/client/pages/editor.tsx' />
+function HomeScript() {
+  return <Script src='/src/client/pages/home.tsx' />
+}
+
+function ArticlesScript() {
+  return <Script src='/src/client/pages/articles.tsx' />
+}
+
+function ArticleScript() {
+  return <Script src='/src/client/pages/article.tsx' />
+}
+
+function PlaygroundScript() {
+  return <Script src='/src/client/pages/playground.tsx' />
 }
 
 function ResourcesScript() {
   return <Script src='/src/client/pages/resources.tsx' />
 }
 
-const renderEditorApp = (c: Context) =>
-  renderApp(c, 'Editor', <EditorScript />)
+const renderHomeApp = (c: Context) =>
+  renderApp(c, 'Home', <HomeScript />)
+
+const renderArticlesApp = (c: Context) =>
+  renderApp(c, 'Articles', <ArticlesScript />)
+
+const renderArticleApp = (c: Context) =>
+  renderApp(c, 'Article', <ArticleScript />)
+
+const renderPlaygroundApp = (c: Context) =>
+  renderApp(c, 'Playground', <PlaygroundScript />)
 
 const renderResourcesApp = (c: Context) =>
   renderApp(c, 'Resources', <ResourcesScript />)
 
-app.get('/', renderEditorApp)
+app.get('/', renderHomeApp)
+app.get('/articles', renderArticlesApp)
+app.get('/article', renderArticleApp)
+app.get('/playground', renderPlaygroundApp)
 app.get('/resources', renderResourcesApp)
 
-app.get('/api/me', async (c) => {
+app.get('/api/me', attachSession, (c) => {
   c.header('Cache-Control', 'no-store')
 
-  const verified = await getSession(c)
+  const user = c.get('user')
+  const session = c.get('session')
 
-  if (!verified) {
+  if (!user || !session) {
     return c.json({ error: 'Unauthorized' }, 401)
   }
 
   return c.json({
-    user: verified.user,
-    session: { expiresAt: verified.session.expiresAt },
+    user,
+    session: { expiresAt: session.expiresAt },
   })
 })
 
@@ -139,9 +177,35 @@ app.get('/media', async (c) => {
 
 app.put('/image', uploadAnonymousImage)
 
+app.post('/api/documents', requireOrigin, requireSession, createDocument)
+app.get('/api/documents', requireSession, listDocuments)
+app.get('/api/documents/:docId', requireSession, getDocument)
+app.patch('/api/documents/:docId', requireOrigin, requireSession, updateDocument)
+app.get('/api/documents/:docId/versions', requireSession, listDocumentVersions)
+app.get(
+  '/api/documents/:docId/versions/:version',
+  requireSession,
+  getDocumentVersion,
+)
+app.post('/api/documents/:docId/versions', requireOrigin, requireSession, saveDocumentVersion)
+app.post(
+  '/api/documents/:docId/versions/:version/restore',
+  requireOrigin,
+  requireSession,
+  restoreDocumentVersion,
+)
+
 app.post('/api/resources', uploadResource)
 app.get('/api/resources', listResources)
 app.delete('/api/resources/:resourceId', deleteResource)
+
+app.onError((error, c) => {
+  console.error(error)
+  if (c.req.path.startsWith('/api/')) {
+    return c.json({ ok: false, code: 'INTERNAL', message: 'Internal Server Error' }, 500)
+  }
+  return c.text('Internal Server Error', 500)
+})
 
 export default app
 export { EditorServerDurable }

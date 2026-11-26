@@ -21,3 +21,15 @@ export interface FormatState {
 export interface CommonButtonProps {
   formatStatus: FormatStatus
 }
+
+export type BlockType =
+  | 'paragraph'
+  | 'h1'
+  | 'h2'
+  | 'h3'
+  | 'ul'
+  | 'ol'
+  | 'blockquote'
+  | 'code';
+
+export type BlockTypeValue = BlockType | 'mixed' | null;

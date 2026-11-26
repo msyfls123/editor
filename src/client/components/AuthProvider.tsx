@@ -66,7 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       toast.add({
         type: 'error',
-        description: error instanceof Error ? error.message : '退出登录失败，请重试',
+        description: error instanceof Error ? error.message : 'Failed to sign out. Please try again.',
       })
     } finally {
       setLoggingOut(false)

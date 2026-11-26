@@ -43,6 +43,16 @@ pnpm cf-typegen
 
 本地 DO 的 SQLite 数据默认在 `.wrangler/state`；修改 schema 需要重来时，可以清掉该目录。
 
+## 部署
+
+`pnpm deploy` 与 Cloudflare 的自动构建都只构建并上传 Worker，**不会应用 D1 migration**。远端 `editor` D1 首次部署或 `migrations/` 变更后，需要显式执行：
+
+```txt
+pnpm wrangler d1 migrations apply editor --remote
+```
+
+共享的 `auth` D1 由 login worker 负责迁移，editor 不修改它。DO 的 SQLite schema 在首次访问时由构造函数自动迁移，不需要部署前操作。
+
 ## 架构
 
 ```mermaid
@@ -64,7 +74,7 @@ flowchart LR
 ## 数据存储
 
 - D1 表结构在 `migrations/0001_init.sql`，用 `pnpm wrangler d1 migrations apply editor --local` 应用到本地。
-- DO 的 schema 在 `src/server/EditorServerDurable.ts` 内，通过 `PRAGMA user_version` 在构造函数中自动迁移。
+- DO 的 schema 在 `src/server/EditorServerDurable.ts` 内，通过 `schema_migrations` 表在构造函数中自动迁移（workerd 的 DO SQLite 不支持 `PRAGMA user_version`）。
 - `AUTH_DB` 绑定共享 `auth` D1，仅用于读取登录态和退出登录；迁移由 login worker 负责。
 - 图片 URL 统一为线上 `https://media.ebichu.cc/<key>`，本地由 `ImageNode` 换成 `/media?key=<key>`；`/media` 不做鉴权。
 
@@ -114,13 +124,13 @@ pnpm exec wrangler d1 migrations apply auth --local --persist-to ../../../.ebich
 | 能力 | 状态 |
 | --- | --- |
 | Lexical 富文本编辑（格式、列表、代码、链接、表格、图片、Mermaid 图） | 已具备 |
-| 临时编辑（`localStorage`） | 已具备 |
-| 手动保存 + 未保存状态 | 待实现，见 SPEC FR-2 / FR-1.6 |
-| 登录与联网编辑（`@ebichu-cc/auth`） | 登录态展示、登录跳转、退出登录已接入；联网编辑待接入 |
-| D1 文章元信息 | `migrations/0001_init.sql` 已添加，D1 访问接口待接入 |
-| DO 版本存储 | SQLite schema 与 `saveVersion` 骨架已添加；HTTP API 待接入；WebSocket echo 仍在 |
+| 临时编辑（`localStorage`） | 已具备（`/playground`，`editor:draft:v1`） |
+| 手动保存 + 未保存状态 | 手动保存已具备；未保存标识与 pending 队列待实现 |
+| 登录与联网编辑（`@ebichu-cc/auth`） | 已接入（`/article`） |
+| D1 文章元信息 | `/api/documents` 创建/列表/读取/改标题已实现 |
+| DO 版本存储 | `saveVersion`、`listVersions`、`getVersion`、`getCurrentVersion`、`getCurrentPlainText` 已实现 |
 | DO WebSocket 广播 | MVP 不需要；联网保存走 HTTP |
-| 版本历史 / 恢复 | 待实现 |
+| 版本历史 / 恢复 | 已实现（`/article` 版本弹窗、只读预览、恢复） |
 | 离线 pending 队列 | 待实现 |
 | 用户资源库 | `/api/resources` 上传/列表/软删除已实现；`/resources` 页面已接入；登录用户走资源库，匿名仍走 `/image` → `anonymous/image/`；图片 URL 线上走 CDN，本地走 `/media?key=` |
 
@@ -130,26 +140,35 @@ pnpm exec wrangler d1 migrations apply auth --local --persist-to ../../../.ebich
 src/
   client/
     pages/
-      editor.tsx                # 编辑器页面入口（含 WebSocket demo）
-      resources.tsx             # 资源库页面入口
+      home.tsx                  # 首页入口
+      articles.tsx              # 文章列表页入口
+      article.tsx               # 联网文档页入口
+      playground.tsx            # 临时文档页入口
+      resources.tsx             # 资源库页入口
     editor/
-      index.tsx                 # 编辑器入口，接本地持久化
-      editor.tsx                # LexicalExtensionComposer 与扩展配置
-      hooks/usePersistence.ts   # 当前：localStorage 持久化
+      index.tsx                 # 临时文档编辑器，接本地持久化
+      editor.tsx                # LexicalExtensionComposer 与编辑器壳
+      extension.ts              # 共享 Lexical 扩展配置
+      preview.tsx               # 版本只读预览
+      hooks/usePersistence.ts   # localStorage 持久化
       plugins/                  # Image / Link / Diagram / TableToolbar
       toolbar/                  # 工具栏按钮
       theme/                    # Lexical 主题
-    components/ui/              # shadcn/base-ui 组件
-    components/PageLayout.tsx   # Toaster + AuthProvider + 页面头部
-    components/AuthMenu.tsx     # 登录态、头像、退出登录、资源库入口
-    components/AuthProvider.tsx # 登录态共享 Context
-    components/ResourcesPage.tsx# 资源库列表与分页
-    lib/                        # 图片读取、登录跳转、className 工具
+    components/
+      container/                # 页面级容器组件（Home/Articles/Article/Playground/Resources）
+      ui/                       # shadcn/base-ui 组件
+      PageLayout.tsx            # Toaster + AuthProvider + 页面头部
+      AuthMenu.tsx              # 登录态、头像、退出登录、文章/资源入口
+      AuthProvider.tsx         # 登录态共享 Context
+      VersionHistoryDialog.tsx  # 版本历史弹窗
+    lib/                        # API 封装、日期/错误、登录跳转、className 工具
   server/
-    index.tsx                   # Hono 入口、SSR、媒体与登录态路由
-    auth.ts                     # @ebichu-cc/auth + 共享 AUTH_DB
+    index.tsx                   # Hono 入口、SSR、页面路由、媒体与登录态路由
+    auth.ts                     # @ebichu-cc/auth + 共享 AUTH_DB 中间件
+    documents.ts                # /api/documents* 文章与版本接口
+    respond.ts                  # 统一 API 错误响应
     resources.ts                # /api/resources + 匿名 /image
-    EditorServerDurable.ts      # DO：SQLite schema + saveVersion 骨架（WebSocket echo 仍在）
+    EditorServerDurable.ts      # DO：SQLite schema、迁移与版本存取
     utils/hash.ts               # 完整 SHA-256（上传去重）
   server/style.css
 migrations/0001_init.sql        # D1: articles / resources / article_resources

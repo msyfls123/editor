@@ -67,7 +67,7 @@ export const ImageProvider = ({ children }: { children: ReactNode }) => {
     if (authState.status === 'loading') {
       toast.add({
         type: 'info',
-        description: '正在读取登录状态，请稍后重试',
+        description: 'Still checking your sign-in status. Please try again.',
       })
       return
     }

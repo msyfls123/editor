@@ -51,7 +51,25 @@ export interface SaveVersionInput {
 export type SaveVersionResult =
   | { ok: true; version: number; createdAt: number; replayed: boolean }
   | { ok: false; code: 'CONFLICT'; currentVersion: number }
-  | { ok: false; code: 'INVALID'; message: string }
+  | { ok: false; code: 'INVALID' | 'PAYLOAD_TOO_LARGE'; message: string }
+
+/** Version row without the large `state` blob, for history lists. */
+export interface VersionSummary {
+  version: number
+  baseVersion: number | null
+  label: string | null
+  authorId: string | null
+  createdAt: number
+}
+
+/** Full version snapshot, including the editor state and referenced resources. */
+export interface VersionDetail extends VersionSummary {
+  state: string
+  plainText: string
+  stateSha256: string
+  clientSaveId: string | null
+  resourceIds: string[]
+}
 
 interface DocumentRow {
   [key: string]: SqlStorageValue
@@ -63,6 +81,28 @@ interface ExistingVersionRow {
   [key: string]: SqlStorageValue
   version: number
   created_at: number
+  state_sha256: string
+}
+
+interface VersionSummaryRow {
+  [key: string]: SqlStorageValue
+  version: number
+  base_version: number | null
+  label: string | null
+  author_id: string | null
+  created_at: number
+}
+
+interface VersionDetailRow extends VersionSummaryRow {
+  state: string
+  plain_text: string
+  state_sha256: string
+  client_save_id: string | null
+}
+
+interface VersionResourceRow {
+  [key: string]: SqlStorageValue
+  resource_id: string
 }
 
 export class EditorServerDurable extends DurableObject<Cloudflare.Env> {
@@ -92,15 +132,30 @@ export class EditorServerDurable extends DurableObject<Cloudflare.Env> {
 
   private migrate() {
     const sql = this.ctx.storage.sql
-    const row = sql.exec<{ user_version: number }>('PRAGMA user_version').toArray()[0]
-    const version = row?.user_version ?? 0
+
+    // Durable Object SQLite rejects `PRAGMA user_version`, so track schema
+    // versions in a regular table instead.
+    sql.exec(
+      `CREATE TABLE IF NOT EXISTS schema_migrations (
+        version    INTEGER PRIMARY KEY,
+        applied_at INTEGER NOT NULL
+      )`,
+    )
+
+    const row = sql.exec<{ version: number }>(
+      'SELECT version FROM schema_migrations ORDER BY version DESC LIMIT 1',
+    ).toArray()[0]
+    const version = row?.version ?? 0
 
     if (version >= 1) return
 
     for (const statement of SCHEMA_V1) {
       sql.exec(statement)
     }
-    sql.exec('PRAGMA user_version = 1')
+    sql.exec(
+      'INSERT INTO schema_migrations (version, applied_at) VALUES (1, ?)',
+      Date.now(),
+    )
   }
 
   async saveVersion(input: SaveVersionInput): Promise<SaveVersionResult> {
@@ -117,10 +172,10 @@ export class EditorServerDurable extends DurableObject<Cloudflare.Env> {
 
     const stateBytes = new TextEncoder().encode(input.state)
     if (stateBytes.byteLength > MAX_STATE_BYTES) {
-      return { ok: false, code: 'INVALID', message: 'state is too large' }
+      return { ok: false, code: 'PAYLOAD_TOO_LARGE', message: 'state is too large' }
     }
     if (new TextEncoder().encode(input.plainText).byteLength > MAX_PLAIN_TEXT_BYTES) {
-      return { ok: false, code: 'INVALID', message: 'plainText is too large' }
+      return { ok: false, code: 'PAYLOAD_TOO_LARGE', message: 'plainText is too large' }
     }
 
     const resourceIds = Array.from(new Set(input.resourceIds ?? []))
@@ -135,7 +190,7 @@ export class EditorServerDurable extends DurableObject<Cloudflare.Env> {
       const sql = this.ctx.storage.sql
 
       const existing = sql.exec<ExistingVersionRow>(
-        `SELECT version, created_at
+        `SELECT version, created_at, state_sha256
          FROM document_versions
          WHERE document_id = ? AND client_save_id = ?`,
         this.docId,
@@ -143,6 +198,15 @@ export class EditorServerDurable extends DurableObject<Cloudflare.Env> {
       ).toArray()[0]
 
       if (existing) {
+        // Replaying the same save is idempotent, but reusing a clientSaveId for
+        // different content must not silently drop the newer edit.
+        if (existing.state_sha256 !== stateSha256) {
+          return {
+            ok: false,
+            code: 'INVALID',
+            message: 'clientSaveId was already used for different content',
+          }
+        }
         return {
           ok: true,
           version: existing.version,
@@ -207,6 +271,110 @@ export class EditorServerDurable extends DurableObject<Cloudflare.Env> {
 
       return { ok: true, version: nextVersion, createdAt: now, replayed: false }
     })
+  }
+
+  async getCurrentVersion(): Promise<number> {
+    const doc = this.ctx.storage.sql.exec<DocumentRow>(
+      'SELECT current_version, created_at FROM documents WHERE id = ?',
+      this.docId,
+    ).toArray()[0]
+
+    return doc?.current_version ?? 0
+  }
+
+  /** Current version's plain text, used for list excerpts. */
+  async getCurrentPlainText(): Promise<string> {
+    const row = this.ctx.storage.sql.exec<VersionDetailRow>(
+      `SELECT version, base_version, state, plain_text, state_sha256, label,
+              author_id, client_save_id, created_at
+       FROM document_versions
+       WHERE document_id = ?
+       ORDER BY version DESC
+       LIMIT 1`,
+      this.docId,
+    ).toArray()[0]
+
+    return row?.plain_text ?? ''
+  }
+
+  /** Lists versions newest first, without the (potentially large) `state`. */
+  async listVersions(options: {
+    limit: number
+    before?: number
+  }): Promise<{ versions: VersionSummary[]; nextBefore: number | null }> {
+    const limit = Math.max(1, Math.min(Math.trunc(options.limit), 100))
+    const sql = this.ctx.storage.sql
+
+    const rows = options.before === undefined
+      ? sql.exec<VersionSummaryRow>(
+          `SELECT version, base_version, label, author_id, created_at
+           FROM document_versions
+           WHERE document_id = ?
+           ORDER BY version DESC
+           LIMIT ?`,
+          this.docId,
+          limit,
+        ).toArray()
+      : sql.exec<VersionSummaryRow>(
+          `SELECT version, base_version, label, author_id, created_at
+           FROM document_versions
+           WHERE document_id = ? AND version < ?
+           ORDER BY version DESC
+           LIMIT ?`,
+          this.docId,
+          options.before,
+          limit,
+        ).toArray()
+
+    const last = rows.at(-1)
+
+    return {
+      versions: rows.map((row) => ({
+        version: row.version,
+        baseVersion: row.base_version,
+        label: row.label,
+        authorId: row.author_id,
+        createdAt: row.created_at,
+      })),
+      nextBefore: rows.length === limit ? last?.version ?? null : null,
+    }
+  }
+
+  async getVersion(version: number): Promise<VersionDetail | null> {
+    const sql = this.ctx.storage.sql
+
+    const row = sql.exec<VersionDetailRow>(
+      `SELECT version, base_version, state, plain_text, state_sha256, label,
+              author_id, client_save_id, created_at
+       FROM document_versions
+       WHERE document_id = ? AND version = ?`,
+      this.docId,
+      version,
+    ).toArray()[0]
+
+    if (!row) return null
+
+    const resources = sql.exec<VersionResourceRow>(
+      `SELECT resource_id
+       FROM version_resources
+       WHERE document_id = ? AND version = ?
+       ORDER BY resource_id`,
+      this.docId,
+      version,
+    ).toArray()
+
+    return {
+      version: row.version,
+      baseVersion: row.base_version,
+      state: row.state,
+      plainText: row.plain_text,
+      stateSha256: row.state_sha256,
+      label: row.label,
+      authorId: row.author_id,
+      clientSaveId: row.client_save_id,
+      createdAt: row.created_at,
+      resourceIds: resources.map((resource) => resource.resource_id),
+    }
   }
 
   async fetch(req: Request): Promise<Response> {

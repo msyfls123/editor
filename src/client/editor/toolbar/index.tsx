@@ -8,8 +8,9 @@ import { AlignRightButton } from "./AlignRightButton"
 import { AlignCenterButton } from './AligCenterButton'
 import { Button } from "@/components/ui/button"
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext"
-import { Save } from "lucide-react"
-import { toast } from "@/components/ui/toast"
+import { $getRoot } from "lexical"
+import { Save, Loader2 } from "lucide-react"
+import { useState, type ReactNode } from "react"
 import { ImageButton } from "./Image"
 import { ImportButton } from "./ImportButton"
 import { useTextFormat } from "../hooks/useTextFormat"
@@ -20,15 +21,32 @@ import { DiagramButton } from "@/editor/toolbar/DiagramButton"
 import { BlockTypeSelect } from "@/editor/toolbar/BlockTypeSelect"
 
 interface ToolbarProps {
-onSave: (text: string) => void
+  onSave: (state: string, plainText: string) => void | Promise<void>
+  children?: ReactNode
 }
 
-export const Toolbar = ({ onSave }: ToolbarProps) => {
+export const Toolbar = ({ onSave, children }: ToolbarProps) => {
   const [editor] = useLexicalComposerContext()
   const format = useTextFormat()
+  const [saving, setSaving] = useState(false)
+
+  const handleSave = async () => {
+    if (saving) return
+
+    const editorState = editor.getEditorState()
+    const state = JSON.stringify(editorState)
+    const plainText = editorState.read(() => $getRoot().getTextContent())
+
+    setSaving(true)
+    try {
+      await onSave(state, plainText)
+    } finally {
+      setSaving(false)
+    }
+  }
 
   return (
-    <div className="sticky top-0 p-2 -mx-2 bg-slate-300/80 z-50 w-100vw flex flex-wrap gap-3" >
+    <div className="sticky top-0 p-2 rounded  bg-slate-300/80 z-50 w-100vw flex flex-wrap gap-3" >
       <ButtonGroup>
         <BlockTypeSelect />
       </ButtonGroup>
@@ -46,7 +64,6 @@ export const Toolbar = ({ onSave }: ToolbarProps) => {
 
       <ButtonGroup>
         <ImageButton />
-        <ImportButton />
         <LinkButton />
         <TableButton />
         <DiagramButton />
@@ -55,17 +72,14 @@ export const Toolbar = ({ onSave }: ToolbarProps) => {
       <ButtonGroup>
         <Button
           variant="outline"
-          onClick={() => {
-            onSave(JSON.stringify(editor.getEditorState()))
-            toast.add({
-              type: 'success',
-              description: 'Saved.'
-            })
-          }}
+          disabled={saving}
+          onClick={handleSave}
         >
-          <Save />
+          {saving ? <Loader2 className="animate-spin" /> : <Save />}
         </Button>
       </ButtonGroup>
+
+      {children}
     </div>
   )
 }

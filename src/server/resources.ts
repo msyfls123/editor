@@ -2,6 +2,7 @@ import type { Context } from 'hono'
 import { env } from 'cloudflare:workers'
 
 import { getSession, isAllowedOrigin } from './auth'
+import { fail } from './respond'
 import { sha256Hex } from './utils/hash'
 
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024
@@ -40,15 +41,6 @@ type UploadResult =
       mime: string
     }
   | { ok: false; response: Response }
-
-function fail(
-  c: Context,
-  status: 400 | 401 | 403 | 404 | 413 | 415 | 500,
-  code: string,
-  message: string,
-): Response {
-  return c.json({ ok: false as const, code, message }, status)
-}
 
 async function readImageUpload(c: Context): Promise<UploadResult> {
   let body: Record<string, string | File>

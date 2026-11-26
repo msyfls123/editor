@@ -219,6 +219,8 @@ CREATE TABLE IF NOT EXISTS version_resources (
 
 SQLite 中 `UNIQUE` 允许多个 `NULL`，因此历史数据没有 `client_save_id` 时不冲突；新写入的版本 SHOULD 始终带该字段。
 
+DO schema 的版本记录在 `schema_migrations` 表中；workerd 的 DO SQLite 不接受 `PRAGMA user_version`（会返回 `SQLITE_AUTH`），不得依赖该 PRAGMA 做迁移。
+
 ### 6.4 数据不变量
 
 1. `document_versions` 只追加，不更新、不删除（GC 除外，且 GC 不改变已有版本号语义）。
@@ -291,6 +293,25 @@ SQLite 中 `UNIQUE` 允许多个 `NULL`，因此历史数据没有 `client_save_
 | `DELETE` | `/api/resources/:resourceId` | 是 | 软删除资源 |
 
 > 图片渲染统一使用资源返回的 `key` + `url`：线上为 `https://media.ebichu.cc/<key>`，本地客户端换成 `/media?key=<key>`。`/media` 不做鉴权。
+
+文章列表成功（`excerpt` 为当前版本的纯文本摘要，用于 `/articles` 的 3 行预览）：
+
+```json
+{
+  "ok": true,
+  "documents": [
+    {
+      "docId": "doc_01J...",
+      "title": "Hello",
+      "currentVersion": 3,
+      "createdAt": 1764123456789,
+      "updatedAt": 1764123456790,
+      "excerpt": "Hello world"
+    }
+  ],
+  "nextBefore": null
+}
+```
 
 创建文章成功：
 
@@ -520,6 +541,44 @@ flowchart TD
 - 历史版本 MUST 使用独立的只读编辑器实例或 `setEditable(false)`，不得复用可编辑实例的本地状态。
 - 退出预览后 MUST 恢复当前编辑内容与 dirty 状态。
 
+### 9.5 页面与路由
+
+| 路由 | 说明 |
+| --- | --- |
+| `GET /` | 首页：临时文档入口、新建联网文档（需填写标题）、当前用户最近 5 篇文章 |
+| `GET /articles` | 当前用户的文章列表：标题、创建时间、更新时间、当前版本纯文本摘要（3 行），支持翻页 |
+| `GET /article?docId=<docId>` | 联网文档编辑器：打开当前版本、保存新版本、查看版本历史并恢复 |
+| `GET /playground` | 临时文档编辑器：不产生版本，保存写入 localStorage |
+| `GET /resources` | 资源库（见 FR-5） |
+
+首页：
+
+- MUST 提供“临时文档”和“新建联网文档”两个入口。
+- “新建联网文档”需要填写标题（去除首尾空白后非空，长度上限 200 字符）；未登录时点击直接跳转登录，不做验证。
+- 已登录时额外展示当前用户最近 5 篇文章（按 `updatedAt` 倒序），可点击进入 `/article?docId=...`。
+- 未登录时只能进入临时文档；点击创建联网文档必须跳转 `login.ebichu.cc`（本地开发为本机 login worker），并携带 `return_to`。
+
+文章列表：
+
+- 仅展示当前用户的文章，按 `updatedAt` 倒序，使用 `limit` + `before` 翻页。
+- 每篇展示标题、`createdAt`、`updatedAt` 和当前版本纯文本摘要；摘要用 CSS 截断为 3 行。
+- 摘要来自 `GET /api/documents` 响应中新增的 `excerpt` 字段（当前版本 `plain_text` 前 300 个字符，无版本时为空字符串）。
+- 未登录时展示登录引导；登录失效（401）时提示重新登录。
+
+联网文档 `/article`：
+
+- 读取 `docId`，加载文章元信息与当前版本内容；`currentVersion === 0` 时打开空编辑器。
+- 页面 MUST 展示当前版本号；点击版本号打开版本历史弹窗。
+- 版本历史按版本号倒序展示，可分页加载；点击版本以只读方式渲染该版本的 `state`（独立只读编辑器，不复用可编辑实例）。
+- 点击“恢复”以该版本为基础创建新版本，随后编辑器内容和 `baseVersion` 更新为新版本。
+- 保存请求携带递增的 `baseVersion` 与新的 `clientSaveId`；`409` 时 MUST 提示冲突并允许用户查看最新版本或以最新版本为基础继续。
+- `docId` 缺失、文章不存在或无权访问时展示错误提示与返回首页入口。
+
+临时文档 `/playground`：
+
+- 不读写任何版本接口，也不展示版本信息。
+- 保存写入 localStorage `editor:draft:v1`；读取时兼容旧键 `EDITOR_STATE`，损坏 JSON 时忽略并允许重新编辑。
+
 ## 10. 安全与隐私
 
 - 所有写接口 MUST 经过 `@ebichu-cc/auth`；`author_id` / `owner_id` 只从登录态获取。
@@ -534,7 +593,7 @@ flowchart TD
 
 - 记录结构化日志：保存成功/冲突/失败、版本号、`docId`、耗时；不得记录完整文章内容。
 - 监控：DO 存储大小、版本增长率、R2 用量、409 比例、pending 重试失败率。
-- D1 迁移使用 `wrangler d1 migrations`；DO schema 使用 `PRAGMA user_version` 做顺序迁移。
+- D1 迁移使用 `wrangler d1 migrations`；DO schema 使用 `schema_migrations` 表做顺序迁移（workerd 不支持在 DO SQLite 中执行 `PRAGMA user_version`）。
 - 定期任务（`setAlarm`）可执行：D1 `current_version` 修复、资源 GC、过期 pending 提示。
 - 提供文章导出（至少导出当前版本 EditorState JSON）作为后续备份能力。
 
@@ -603,9 +662,9 @@ M1–M3 是联网编辑的最小闭环；M4、M5 可按实际优先级并行。
 
 ## 附录 B：与当前代码的差异
 
-- `src/server/EditorServerDurable.ts` 已加入 SQLite schema、`PRAGMA user_version` 迁移和 `saveVersion` 骨架；HTTP/RPC 接入与客户端保存流程仍待实现。WebSocket echo 仍在，但不属于 MVP 契约。
+- `src/server/EditorServerDurable.ts` 已实现 `saveVersion`、`listVersions`、`getVersion`、`getCurrentVersion` 与 `getCurrentPlainText`；schema 版本记录在 `schema_migrations` 表中。`/api/documents*` 端点（创建/列表/元信息/改标题/版本列表/版本内容/保存/恢复）已接入，客户端页面已连接。WebSocket echo 仍在，但不属于 MVP 契约。
 - `migrations/0001_init.sql` 已添加 D1 表结构；资源接口已开始使用 `EDITOR_DB`。
-- `src/client/editor/hooks/usePersistence.ts` 目前只用 `localStorage` 保存单个 `EDITOR_STATE`。
+- `src/client/editor/hooks/usePersistence.ts` 使用 `editor:draft:v1` 保存临时文档，并兼容读取旧键 `EDITOR_STATE`；联网文档的保存与版本逻辑在 `/article` 页面。
 - `wrangler.jsonc` 已声明 D1 `EDITOR_DB`、共享 `AUTH_DB`、R2 `R2_MEDIA` 和 DO；`EDITOR_DB` 已用于资源元数据。
 - `src/server/index.tsx` 的 WebSocket 查询参数目前叫 `article`，需统一为 `docId`。
 - 资源上传已改用完整 SHA-256（`sha256Hex`）；`calcEdgeHash` 不再用于上传去重。
@@ -613,5 +672,6 @@ M1–M3 是联网编辑的最小闭环；M4、M5 可按实际优先级并行。
 - 登录用户走 `POST /api/resources`；`GET /api/resources`、`DELETE /api/resources/:resourceId` 已实现，`ImageProvider` 已按登录态分流。
 - 图片 URL 统一为 `https://media.ebichu.cc/<key>`，本地由 `ImageNode` 换成 `/media?key=<key>`。
 - 资源接口仅保留上传、列表和软删除；图片统一走公开 CDN / `/media`。
-- `@ebichu-cc/auth` 已作为 devDependency 安装；`src/server/auth.ts` 已通过共享 `AUTH_DB` 接入登录态，`/api/me` 与 `/api/logout` 已实现。
+- `@ebichu-cc/auth` 已作为 devDependency 安装；`src/server/auth.ts` 已通过共享 `AUTH_DB` 接入登录态，并基于 `createHonoAuth` 提供 `attachSession` / `requireSession` / `requireOrigin` 中间件；`/api/me`、`/api/logout` 与 `/api/documents*` 已使用该登录态。
+- 页面路由已拆分为 `/`（首页）、`/articles`（文章列表）、`/article?docId=`（联网编辑）、`/playground`（临时文档）与 `/resources`（资源库）；临时文档使用 `editor:draft:v1` 并兼容旧键 `EDITOR_STATE`。
 - `src/client/components/AuthProvider.tsx` / `AuthMenu.tsx` 已实现登录态共享、登录跳转、头像和退出登录。

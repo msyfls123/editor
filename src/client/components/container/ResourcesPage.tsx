@@ -11,7 +11,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination'
-import { useAuth } from './AuthProvider'
+import { useAuth } from '@/components/AuthProvider'
 import { goToLogin } from '@/lib/auth-login'
 
 const PAGE_SIZE = 10
@@ -83,10 +83,10 @@ export function ResourcesPage() {
         setNextBefore(null)
         setError(
           cause instanceof AuthRequestError && cause.status === 401
-            ? '登录已失效，请刷新页面重新登录'
+            ? 'Your session expired. Refresh the page and sign in again.'
             : cause instanceof Error
               ? cause.message
-              : '加载资源失败',
+              : 'Failed to load resources',
         )
       })
       .finally(() => {
@@ -117,12 +117,12 @@ export function ResourcesPage() {
   const canNext = nextBefore !== null && items.length === PAGE_SIZE
 
   return (
-    <section className="mx-auto mt-10 w-full max-w-3xl pb-16">
+    <section className="mt-10 w-full pb-16">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">资源库</h1>
+          <h1 className="text-2xl font-semibold text-slate-900">Resources</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            当前账号上传的图片资源
+            Images uploaded by your account
           </p>
         </div>
         <div className="flex gap-2">
@@ -133,7 +133,7 @@ export function ResourcesPage() {
             render={<a href="/" />}
           >
             <ArrowLeft />
-            返回编辑器
+            Back to home
           </Button>
           <Button
             variant="outline"
@@ -142,7 +142,7 @@ export function ResourcesPage() {
             onClick={() => setReloadToken((token) => token + 1)}
           >
             <RefreshCw className={loading ? 'animate-spin' : undefined} />
-            刷新
+            Refresh
           </Button>
         </div>
       </div>
@@ -160,9 +160,9 @@ export function ResourcesPage() {
 
       {state.status === 'anonymous' && (
         <div className="rounded-lg border border-dashed p-10 text-center">
-          <p className="text-sm text-muted-foreground">登录后可以查看资源库</p>
+          <p className="text-sm text-muted-foreground">Sign in to see your resources</p>
           <Button className="mt-4" variant="outline" onClick={goToLogin}>
-            去登录
+            Sign in
           </Button>
         </div>
       )}
@@ -177,7 +177,7 @@ export function ResourcesPage() {
 
           {!error && !loading && items.length === 0 && (
             <div className="rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground">
-              还没有上传资源
+              No resources uploaded yet
             </div>
           )}
 
@@ -216,7 +216,7 @@ export function ResourcesPage() {
                     }
                   >
                     <ExternalLink />
-                    访问
+                    Open
                   </Button>
                 </li>
               ))}
@@ -228,7 +228,7 @@ export function ResourcesPage() {
               <PaginationItem>
                 <PaginationPrevious
                   href="#"
-                  text="上一页"
+                  text="Previous"
                   aria-disabled={!canPrevious}
                   className={canPrevious ? undefined : 'pointer-events-none opacity-50'}
                   onClick={(event) => {
@@ -249,7 +249,7 @@ export function ResourcesPage() {
               <PaginationItem>
                 <PaginationNext
                   href="#"
-                  text="下一页"
+                  text="Next"
                   aria-disabled={!canNext}
                   className={canNext ? undefined : 'pointer-events-none opacity-50'}
                   onClick={(event) => {

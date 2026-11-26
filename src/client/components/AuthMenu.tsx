@@ -1,6 +1,6 @@
 import type { AuthUser } from '@ebichu-cc/auth'
 import { avatarFor } from '@ebichu-cc/auth'
-import { FolderOpen, LogIn, LogOut } from 'lucide-react'
+import { FileText, FolderOpen, LogIn, LogOut } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { goToLogin } from '@/lib/auth-login'
@@ -35,7 +35,7 @@ export function AuthMenu() {
   if (state.status === 'loading') {
     return (
       <span
-        aria-label="正在读取登录状态"
+        aria-label="Loading sign-in status"
         className="block size-8 animate-pulse rounded-full bg-muted"
       />
     )
@@ -45,7 +45,7 @@ export function AuthMenu() {
     return (
       <Button variant="outline" onClick={goToLogin}>
         <LogIn />
-        登录
+        Sign in
       </Button>
     )
   }
@@ -58,7 +58,7 @@ export function AuthMenu() {
             variant="ghost"
             size="icon"
             className="rounded-full"
-            aria-label="账户菜单"
+            aria-label="Account menu"
           />
         }
       >
@@ -71,13 +71,17 @@ export function AuthMenu() {
           </DropdownMenuLabel>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
+        <DropdownMenuItem render={<a href="/articles" />}>
+          <FileText />
+          My articles
+        </DropdownMenuItem>
         <DropdownMenuItem render={<a href="/resources" />}>
           <FolderOpen />
-          资源库
+          Resources
         </DropdownMenuItem>
         <DropdownMenuItem disabled={loggingOut} onClick={logout}>
           <LogOut />
-          {loggingOut ? '退出中…' : '退出登录'}
+          {loggingOut ? 'Signing out…' : 'Sign out'}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
