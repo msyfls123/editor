@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
-import { ArrowLeft, FileText, History } from 'lucide-react'
+import { ArrowLeft, Eye, FileText, History } from 'lucide-react'
 import { AuthRequestError } from '@ebichu-cc/auth/client'
 
 import { Button } from '@/components/ui/button'
@@ -276,15 +276,28 @@ export function ArticlePage({ docId }: ArticlePageProps) {
     <>
       <section className="mt-8 w-full">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <Button
-            variant="outline"
-            size="sm"
-            nativeButton={false}
-            render={<a href="/articles" />}
-          >
-            <ArrowLeft />
-            Articles
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              nativeButton={false}
+              render={<a href="/articles" />}
+            >
+              <ArrowLeft />
+              Articles
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              nativeButton={false}
+              render={
+                <a href={`/document/preview?docId=${encodeURIComponent(docId)}`} />
+              }
+            >
+              <Eye />
+              Preview
+            </Button>
+          </div>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <FileText className="size-4" />
             <span>Created {formatTime(document.createdAt)}</span>

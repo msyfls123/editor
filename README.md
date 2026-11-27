@@ -131,6 +131,7 @@ pnpm exec wrangler d1 migrations apply auth --local --persist-to ../../../.ebich
 | DO 版本存储 | `saveVersion`、`listVersions`、`getVersion`、`getCurrentVersion`、`getCurrentPlainText` 已实现 |
 | DO WebSocket 广播 | MVP 不需要；联网保存走 HTTP |
 | 版本历史 / 恢复 | 已实现（`/article` 版本弹窗、只读预览、恢复） |
+| 静态预览 | 已实现（`/document/preview`：Headless Lexical 导出 HTML，Pele hydration 图表） |
 | 离线 pending 队列 | 待实现 |
 | 用户资源库 | `/api/resources` 上传/列表/软删除已实现；`/resources` 页面已接入；登录用户走资源库，匿名仍走 `/image` → `anonymous/image/`；图片 URL 线上走 CDN，本地走 `/media?key=` |
 
@@ -143,6 +144,7 @@ src/
       home.tsx                  # 首页入口
       articles.tsx              # 文章列表页入口
       article.tsx               # 联网文档页入口
+      document-preview.tsx      # 静态预览页入口
       playground.tsx            # 临时文档页入口
       resources.tsx             # 资源库页入口
     editor/
@@ -155,7 +157,7 @@ src/
       toolbar/                  # 工具栏按钮
       theme/                    # Lexical 主题
     components/
-      container/                # 页面级容器组件（Home/Articles/Article/Playground/Resources）
+      container/                # 页面级容器组件（Home/Articles/Article/Playground/Resources/Preview）
       ui/                       # shadcn/base-ui 组件
       PageLayout.tsx            # Toaster + AuthProvider + 页面头部
       AuthMenu.tsx              # 登录态、头像、退出登录、文章/资源入口

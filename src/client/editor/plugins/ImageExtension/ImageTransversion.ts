@@ -1,11 +1,14 @@
-import { defineImportRule, sel } from '@lexical/html'
-import { $createImageNode, keyState, sizeState, urlState } from './ImageNode';
-import { $setState, ElementFormatType } from 'lexical';
+import { defineImportRule, domOverride, sel } from '@lexical/html'
+import type { DOMExportOutput, ElementFormatType } from 'lexical'
+import { $getState, $setState } from 'lexical'
+
+import { $createImageNode, ImageNode, keyState, sizeState, urlState } from './ImageNode'
+
 export const ImageImportRule = defineImportRule({
   name: '@app/image',
   match: sel.tag('div').attr('data-lexical-image-block', true),
   $import: (ctx, el, $next) => {
-    const img = $createImageNode();
+    const img = $createImageNode()
     const format = el.style.textAlign
     if (format) {
       img.setFormat(format as ElementFormatType)
@@ -24,5 +27,32 @@ export const ImageImportRule = defineImportRule({
       })
     }
     return [img]
+  }
+})
+
+export const ImageRenderRule = domOverride([ImageNode], {
+  $exportDOM: (node): DOMExportOutput => {
+    const url = $getState(node, urlState)
+    const key = $getState(node, keyState)
+    const size = $getState(node, sizeState)
+
+    const element = document.createElement('div')
+    element.setAttribute('data-lexical-image-block', 'true')
+    element.setAttribute('data-lexical-image-key', key)
+    element.setAttribute('data-lexical-image-url', url)
+
+    const format = node.getFormat()
+    if (format) {
+      element.style.textAlign = format
+    }
+
+    const img = document.createElement('img')
+    img.src = url
+    img.classList.add('inline-block')
+    img.setAttribute('width', `${size.width}px`)
+    img.setAttribute('height', `${size.height}px`)
+    element.appendChild(img)
+
+    return { element }
   }
 })

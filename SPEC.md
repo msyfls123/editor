@@ -548,6 +548,7 @@ flowchart TD
 | `GET /` | 首页：临时文档入口、新建联网文档（需填写标题）、当前用户最近 5 篇文章 |
 | `GET /articles` | 当前用户的文章列表：标题、创建时间、更新时间、当前版本纯文本摘要（3 行），支持翻页 |
 | `GET /article?docId=<docId>` | 联网文档编辑器：打开当前版本、保存新版本、查看版本历史并恢复 |
+| `GET /document/preview?docId=<docId>` | 当前版本的只读静态预览：Headless Lexical 渲染为 HTML，图表在浏览器中 hydration |
 | `GET /playground` | 临时文档编辑器：不产生版本，保存写入 localStorage |
 | `GET /resources` | 资源库（见 FR-5） |
 
@@ -578,6 +579,13 @@ flowchart TD
 
 - 不读写任何版本接口，也不展示版本信息。
 - 保存写入 localStorage `editor:draft:v1`；读取时兼容旧键 `EDITOR_STATE`，损坏 JSON 时忽略并允许重新编辑。
+
+文档预览 `/document/preview`：
+
+- 仅作者可用；读取当前版本 `state`，用 Headless Lexical（同一套扩展，但不加载 `TreeViewExtension` 等 React-only 插件）直接导出静态 HTML，不挂载可编辑器。
+- `DiagramNode` 导出为通用占位协议：`data-lexical-component="diagram"`、`data-lexical-renderer="pele"`、`data-render-status`，源码放在 `<template data-render-source>`，输出容器为 `[data-render-output]`。
+- 页面挂载后按需动态加载 Pele，将 SVG 写入输出容器；同一 DOM 的重复 hydration 共享同一个 Promise，失败可重试。
+- 本地非 https 访问时，预览中的图片回退到 `/media?key=<key>`。
 
 ## 10. 安全与隐私
 

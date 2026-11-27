@@ -1,13 +1,19 @@
 import { CustomCommand } from "@/editor/constants";
 import { $createDiagramNode, CreateDiagramProps, DiagramCodeRootNode, DiagramNode } from "@/editor/plugins/DiagramExtension/DiagramNode";
 import { $insertNodeToNearestRoot } from "@lexical/utils";
-import { $createNodeSelection, $getSelection, $getSelectionSlotFrame, $getSlot, $getSlotHost, $isNodeSelection, $setSelection, COMMAND_PRIORITY_BEFORE_EDITOR, COMMAND_PRIORITY_HIGH, COMMAND_PRIORITY_LOW, createCommand, defineExtension, ElementNode, KEY_ENTER_COMMAND, KEY_ESCAPE_COMMAND, KEY_TAB_COMMAND, mergeRegister } from "lexical";
+import { DOMImportExtension, DOMRenderExtension } from "@lexical/html";
+import { configExtension, $createNodeSelection, $getSelection, $getSelectionSlotFrame, $getSlot, $getSlotHost, $isNodeSelection, $setSelection, COMMAND_PRIORITY_BEFORE_EDITOR, COMMAND_PRIORITY_HIGH, COMMAND_PRIORITY_LOW, createCommand, defineExtension, ElementNode, KEY_ENTER_COMMAND, KEY_ESCAPE_COMMAND, KEY_TAB_COMMAND, mergeRegister } from "lexical";
+import { DiagramImportRule, DiagramRenderRule, LegacyDiagramImportRule } from "./DiagramTransversion";
 
 export const INSERT_DIAGRAM_COMMAND = createCommand<CreateDiagramProps | undefined>(CustomCommand.INSERT_DIAGRAM_COMMAND)
 
 export const DiagramExtension = defineExtension({
   name: 'editor/diagram',
   nodes: () => [DiagramNode, DiagramCodeRootNode],
+  dependencies: [
+    configExtension(DOMImportExtension, { rules: [DiagramImportRule, LegacyDiagramImportRule] }),
+    configExtension(DOMRenderExtension, { overrides: [DiagramRenderRule] }),
+  ],
   register(editor) {
     return mergeRegister(
       editor.registerCommand(

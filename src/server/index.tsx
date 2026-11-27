@@ -87,6 +87,10 @@ function PlaygroundScript() {
   return <Script src='/src/client/pages/playground.tsx' />
 }
 
+function DocumentPreviewScript() {
+  return <Script src='/src/client/pages/document-preview.tsx' />
+}
+
 function ResourcesScript() {
   return <Script src='/src/client/pages/resources.tsx' />
 }
@@ -103,6 +107,9 @@ const renderArticleApp = (c: Context) =>
 const renderPlaygroundApp = (c: Context) =>
   renderApp(c, 'Playground', <PlaygroundScript />)
 
+const renderDocumentPreviewApp = (c: Context) =>
+  renderApp(c, 'Preview', <DocumentPreviewScript />)
+
 const renderResourcesApp = (c: Context) =>
   renderApp(c, 'Resources', <ResourcesScript />)
 
@@ -110,6 +117,7 @@ app.get('/', renderHomeApp)
 app.get('/articles', renderArticlesApp)
 app.get('/article', renderArticleApp)
 app.get('/playground', renderPlaygroundApp)
+app.get('/document/preview', renderDocumentPreviewApp)
 app.get('/resources', renderResourcesApp)
 
 app.get('/api/me', attachSession, (c) => {

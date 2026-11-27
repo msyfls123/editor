@@ -129,3 +129,26 @@
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.553 0.013 58.071);
 }
+
+/* Static HTML diagram placeholders hydrated by Pele in the browser. */
+[data-lexical-component='diagram'] {
+  margin: 1.5rem 0;
+}
+
+[data-lexical-component='diagram'] [data-render-output] {
+  overflow-x: auto;
+}
+
+[data-lexical-component='diagram'] [data-render-output] svg {
+  max-width: 100%;
+  height: auto;
+}
+
+[data-lexical-component='diagram'][data-render-status='error'] [data-render-output] {
+  padding: 0.75rem;
+  border: 1px solid var(--color-destructive, #e11d48);
+  border-radius: var(--radius, 0.5rem);
+  color: var(--color-destructive, #e11d48);
+  font-size: 0.875rem;
+  white-space: pre-wrap;
+}

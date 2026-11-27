@@ -28,6 +28,11 @@ export interface EditorExtensionOptions {
   /** Disable autofocus (e.g. for read-only previews or embedded editors). */
   embedded?: boolean
   /**
+   * Exclude React-only extensions (e.g. TreeView) when building a headless
+   * editor without `LexicalExtensionComposer`.
+   */
+  headless?: boolean
+  /**
    * Keep editor state across HMR reloads in dev. Disable it for transient
    * read-only previews: HMRExtension restores the last state saved under the
    * same namespace on every remount, which would shadow `$initialEditorState`.
@@ -48,6 +53,7 @@ export function createEditorExtension(
     embedded = isEmbedded,
     hmr = true,
     hmrId,
+    headless = false,
   } = options
 
   return defineExtension({
@@ -68,7 +74,8 @@ export function createEditorExtension(
       configExtension(AutoFocusExtension, {
         disabled: embedded,
       }),
-      TreeViewExtension,
+      // TreeView is a React extension and needs LexicalExtensionComposer.
+      ...(headless ? [] : [TreeViewExtension]),
       // content
       ListExtension,
       CodeExtension,

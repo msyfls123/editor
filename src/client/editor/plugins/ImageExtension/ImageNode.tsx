@@ -118,27 +118,6 @@ export class ImageNode extends DecoratorBlockNode {
     }
   }
 
-  exportDOM() {
-    const url = $getState(this, urlState)
-    const element = document.createElement('div')
-    element.setAttribute('data-lexical-image-block', 'true')
-    element.setAttribute('data-lexical-image-key', $getState(this, keyState))
-    element.setAttribute('data-lexical-image-url', $getState(this, urlState))
-    if (this.getFormat()) {
-      element.style.textAlign = this.getFormat()
-    }
-    const img = document.createElement('img')
-    img.src = url
-    img.classList.add('inline-block')
-    const size = $getState(this, sizeState)
-    img.setAttribute('width', `${size.width}px`)
-    img.setAttribute('height', `${size.height}px`)
-    element.appendChild(img)
-    return {
-      element
-    }
-  }
-
   // view
 
   decorate() {
